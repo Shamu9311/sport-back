@@ -1,0 +1,189 @@
+=================================================================
+  GUÍA DE IMPLEMENTACIÓN - RAG CON EMBEDDINGS VECTORIALES
+=================================================================
+
+PASO 1: CONFIGURAR .ENV
+-----------------------------------------------------------------
+Agregar/verificar en tu archivo .env:
+
+# Embeddings (Usando Gemini - GRATIS)
+USE_VECTOR_SEARCH=false    # Cambiar a 'true' cuando esté listo
+EMBEDDING_MODEL=text-embedding-004
+GEMINI_API_KEY=tu_gemini_api_key_aqui
+
+# NOTA: Ya NO necesitas OPENAI_API_KEY para embeddings
+# Gemini los genera GRATIS (60 requests/minuto)
+
+# Obtener Gemini API key GRATIS en:
+# https://makersuite.google.com/app/apikey
+
+
+PASO 2: CREAR TABLA DE EMBEDDINGS
+-----------------------------------------------------------------
+Ejecutar el script SQL:
+
+cd "D:\Tesis app sis\SportBack-funcionalBack"
+mysql -u root -p sport < embedding_products.sql
+
+Verificar que se creó:
+mysql -u root -p sport
+> SHOW TABLES;
+> DESCRIBE product_embeddings;
+
+
+PASO 3: GENERAR EMBEDDINGS DE PRODUCTOS (Una sola vez)
+-----------------------------------------------------------------
+Ejecutar el script de generación:
+
+cd "D:\Tesis app sis\SportBack-funcionalBack"
+node scripts/generateProductEmbeddings.js
+
+Esto:
+- Lee los 18 productos de la BD
+- Genera embedding para cada uno (usa Gemini API - GRATIS)
+- Guarda en la tabla product_embeddings
+- Tiempo: ~10-15 segundos
+- Costo: $0 USD - TOTALMENTE GRATIS con Gemini
+- Dimensiones del vector: 768 (Gemini) vs 1536 (OpenAI)
+
+Salida esperada:
+  🚀 Generando embeddings para 18 productos...
+  ✅ [1/18] GO Energy Isotonic Gel
+  ✅ [2/18] GO Energy + Caffeine Gel
+  ...
+  🎉 Proceso completado!
+  ✅ Exitosos: 18
+
+
+PASO 4: PROBAR LA BÚSQUEDA VECTORIAL
+-----------------------------------------------------------------
+Ejecutar script de prueba:
+
+node scripts/testVectorSearch.js
+
+Salida esperada:
+  📊 Embeddings en BD: 18
+  🔄 Generando embedding del perfil...
+  ✅ Embedding generado: Vector de 1536 dimensiones
+  🔍 Buscando productos similares...
+  
+  🔍 Top 5 productos más similares:
+    1. GO Energy Gel - Similitud: 87.34%
+    2. HYDRO Tablet - Similitud: 82.15%
+    ...
+
+
+PASO 5: ACTIVAR RAG EN PRODUCCIÓN
+-----------------------------------------------------------------
+Cambiar en .env:
+
+USE_VECTOR_SEARCH=true
+
+Reiniciar servidor:
+  npm run dev
+
+
+PASO 6: VERIFICAR QUE FUNCIONA
+-----------------------------------------------------------------
+En la app móvil:
+1. Crear un entrenamiento (ej: Cardio, 45 min, Alto)
+2. Ver logs del backend
+
+Logs esperados:
+  🔍 Usando búsqueda vectorial (RAG)...
+  ✅ Vector search: 18 productos encontrados, 15 después de filtros
+  🔍 Top 5 productos más similares:
+    1. GO Energy Gel - Similitud: 89.23%
+    ...
+
+
+COMPARACIÓN: SQL vs VECTOR SEARCH
+-----------------------------------------------------------------
+
+ANTES (SQL):
+  SELECT * FROM products 
+  WHERE ... 
+  ORDER BY carbs_g DESC
+  → Ordena solo por carbohidratos
+
+AHORA (Vector RAG):
+  1. Genera vector del usuario: [0.82, 0.11, ...]
+  2. Compara con vectores de productos
+  3. Encuentra productos semánticamente similares
+  4. Aplica filtros duros (vegano, cafeína)
+  5. Devuelve top 20
+  
+  → Entiende el CONTEXTO completo (objetivo + tipo + intensidad)
+
+
+ARCHIVOS DEL SISTEMA RAG
+-----------------------------------------------------------------
+NUEVOS:
+  ✅ embedding_products.sql - Tabla de embeddings
+  ✅ services/embeddingServices.js - Generación de vectores
+  ✅ services/vectorSearchService.js - Búsqueda por similitud
+  ✅ scripts/generateProductEmbeddings.js - Generar embeddings
+  ✅ scripts/testVectorSearch.js - Prueba del sistema
+
+MODIFICADOS:
+  ✅ services/retrievalService.js - Soporta vector search
+  ✅ services/trainingRecommendationService.js - Usa nuevo retrieval
+  ✅ controllers/recommendationController.js - Pasa training data
+
+
+COSTOS CON GEMINI
+-----------------------------------------------------------------
+✅ TOTALMENTE GRATIS
+
+Gemini API - Límites gratuitos:
+  - 60 requests por minuto
+  - 1,500 requests por día
+  - Sin costo
+  
+Para tu caso (18 productos):
+  - Generación inicial: 18 requests
+  - Por recomendación: 1 request
+  - Costo: $0 USD
+  
+¡100% GRATIS con Gemini!
+
+
+TROUBLESHOOTING
+-----------------------------------------------------------------
+
+Error: "OpenAI API key is missing"
+  → Verificar OPENAI_API_KEY en .env
+
+Error: "No product embeddings found"
+  → Ejecutar: node scripts/generateProductEmbeddings.js
+
+Error: "Invalid vectors for similarity"
+  → Verificar que los embeddings se guardaron correctamente en BD
+  → SELECT * FROM product_embeddings LIMIT 1;
+
+Error: Rate limit OpenAI
+  → Aumentar delay en generateProductEmbeddings.js (línea 58)
+  → await new Promise(resolve => setTimeout(resolve, 1000));
+
+
+VENTAJAS DEL NUEVO SISTEMA
+-----------------------------------------------------------------
+✅ Búsqueda semántica (entiende conceptos)
+✅ Mejor contexto (considera todo el perfil)
+✅ Más flexible (no solo reglas SQL)
+✅ Mejores recomendaciones
+✅ Fallback a SQL si falla
+✅ Activación con flag (USE_VECTOR_SEARCH)
+
+
+DESACTIVAR RAG (Volver a SQL)
+-----------------------------------------------------------------
+En .env:
+  USE_VECTOR_SEARCH=false
+
+Reiniciar servidor.
+
+
+FIN DE LA GUÍA
+=================================================================
+

@@ -35,8 +35,24 @@ export default class TrainingRecommendationService {
         userProfile[0] = defaultProfile;
       }
 
-      // 2. Obtener productos recomendados
-      const products = await Recommendation.getRecommendedProducts(userId, trainingData);
+      // 2. Obtener productos candidatos usando retrieval service (con soporte RAG)
+      const { getCandidateProducts } = await import('./retrievalService.js');
+      
+      // Combinar perfil con datos de entrenamiento
+      const combinedProfile = {
+        ...userProfile[0],
+        training_type: trainingData.type,
+        intensity: trainingData.intensity,
+        duration: trainingData.durationMin
+      };
+      
+      let products = await getCandidateProducts(combinedProfile, trainingData);
+      
+      // Fallback si no se encuentran productos con el nuevo sistema
+      if (!products || products.length === 0) {
+        console.warn('No se encontraron productos candidatos con retrieval, usando método alternativo');
+        products = await Recommendation.getRecommendedProducts(userId, trainingData);
+      }
       
       if (!products || products.length === 0) {
         console.warn('No hay productos disponibles para recomendar');

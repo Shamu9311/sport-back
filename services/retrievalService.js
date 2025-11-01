@@ -1,13 +1,143 @@
 // services/retrievalService.js
 import { createConnection } from '../config/db.js';
+import { generateUserProfileEmbedding } from './embeddingServices.js';
+import { findSimilarProducts } from './vectorSearchService.js';
 
 const db = createConnection();
 const MAX_CANDIDATE_PRODUCTS = 20; // Número máximo de productos a recuperar
+const USE_VECTOR_SEARCH = process.env.USE_VECTOR_SEARCH === 'true'; // Flag para activar/desactivar
 
-export const getCandidateProducts = async (userProfile) => {
+export const getCandidateProducts = async (userProfile, trainingData = {}) => {
     if (!userProfile) {
         throw new Error("User profile is required for product retrieval.");
     }
+
+    // Si está activada la búsqueda vectorial, usarla
+    if (USE_VECTOR_SEARCH) {
+        try {
+            console.log('🔍 Usando búsqueda vectorial (RAG)...');
+            return await getCandidateProductsWithVectorSearch(userProfile, trainingData);
+        } catch (error) {
+            console.error('⚠️ Error en búsqueda vectorial, fallback a SQL:', error.message);
+            // Fallback a búsqueda SQL tradicional si falla
+            return await getCandidateProductsWithSQL(userProfile);
+        }
+    } else {
+        console.log('🔍 Usando búsqueda SQL tradicional...');
+        return await getCandidateProductsWithSQL(userProfile);
+    }
+};
+
+// Nueva función: Búsqueda con vectores (RAG)
+async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
+    // 1. Generar embedding del perfil del usuario + entrenamiento
+    const combinedProfile = {
+        ...userProfile,
+        training_type: trainingData.type || userProfile.training_type,
+        intensity: trainingData.intensity || userProfile.intensity,
+        duration: trainingData.durationMin || trainingData.duration || 0
+    };
+    
+    const userEmbedding = await generateUserProfileEmbedding(combinedProfile);
+    
+    // 2. Buscar productos similares por vector (top 30 inicial)
+    const similarProductIds = await findSimilarProducts(userEmbedding, 30);
+    
+    if (!similarProductIds || similarProductIds.length === 0) {
+        console.warn('⚠️ No se encontraron productos similares, usando SQL como fallback');
+        return await getCandidateProductsWithSQL(userProfile);
+    }
+    
+    // 3. Obtener detalles completos de los productos similares
+    const placeholders = similarProductIds.map(() => '?').join(',');
+    const [products] = await db.query(`
+        SELECT
+            p.product_id,
+            p.name AS product_name,
+            p.description AS product_description,
+            p.usage_recommendation,
+            pt.name AS type_name,
+            pc.name AS category_name,
+            pc.usage_context,
+            GROUP_CONCAT(DISTINCT pa.name) AS attributes,
+            MAX(pn.serving_size) AS serving_size,
+            MAX(pn.energy_kcal) AS energy_kcal,
+            MAX(pn.protein_g) AS protein_g,
+            MAX(pn.carbs_g) AS carbs_g,
+            MAX(pn.sugars_g) AS sugars_g,
+            MAX(pn.sodium_mg) AS sodium_mg,
+            MAX(pn.caffeine_mg) AS caffeine_mg
+        FROM products p
+        LEFT JOIN product_types pt ON p.type_id = pt.type_id
+        LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
+        LEFT JOIN product_attributes_mapping pam ON p.product_id = pam.product_id
+        LEFT JOIN product_attributes pa ON pam.attribute_id = pa.attribute_id
+        LEFT JOIN product_nutrition pn ON p.product_id = pn.product_id
+        WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
+        GROUP BY p.product_id
+        ORDER BY FIELD(p.product_id, ${placeholders})
+    `, similarProductIds);
+    
+    // 4. Aplicar filtros duros (restricciones absolutas)
+    const filtered = products.filter(product => {
+        // Restricciones dietéticas
+        if (userProfile.dietary_restrictions && userProfile.dietary_restrictions.toLowerCase() !== 'no') {
+            const restrictions = userProfile.dietary_restrictions.toLowerCase();
+            const attributes = (product.attributes || '').toLowerCase();
+            
+            if (restrictions.includes('vegano') && !attributes.includes('vegano')) {
+                return false;
+            }
+            if (restrictions.includes('vegetariano') && 
+                !attributes.includes('vegetariano') && 
+                !attributes.includes('vegano')) {
+                return false;
+            }
+            if (restrictions.includes('libre de gluten') && !attributes.includes('libre de gluten')) {
+                return false;
+            }
+        }
+        
+        // Tolerancia a cafeína
+        if (userProfile.caffeine_tolerance) {
+            const tolerance = userProfile.caffeine_tolerance.toLowerCase();
+            const caffeine = product.caffeine_mg || 0;
+            
+            if (tolerance === 'no' && caffeine > 0) {
+                return false;
+            }
+            if (tolerance === 'bajo' && caffeine > 50) {
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    console.log(`✅ Vector search: ${products.length} productos encontrados, ${filtered.length} después de filtros duros`);
+    
+    // 5. Formatear y devolver top 20
+    return filtered.slice(0, MAX_CANDIDATE_PRODUCTS).map(row => ({
+        product_id: row.product_id,
+        name: row.product_name,
+        description: row.product_description,
+        usage_recommendation: row.usage_recommendation,
+        type: row.type_name,
+        category: row.category_name,
+        usage_context: row.usage_context,
+        attributes: row.attributes ? row.attributes.split(',') : [],
+        serving_size: row.serving_size,
+        energy_kcal: row.energy_kcal,
+        protein_g: row.protein_g,
+        carbs_g: row.carbs_g,
+        sugars_g: row.sugars_g,
+        sodium_mg: row.sodium_mg,
+        caffeine_mg: row.caffeine_mg,
+    }));
+}
+
+// Función original: Búsqueda con SQL (para fallback o cuando vector search está desactivado)
+async function getCandidateProductsWithSQL(userProfile) {
 
     let query = `
         SELECT

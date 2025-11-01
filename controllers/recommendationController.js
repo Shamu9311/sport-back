@@ -17,8 +17,9 @@ export const getRecommendations = async (req, res) => {
         }
         const userProfile = profileRows[0];
 
-        // 2. Paso de Recuperación (Retriever)
-        const candidateProducts = await getCandidateProducts(userProfile);
+        // 2. Paso de Recuperación (Retriever) - Ahora con soporte de vector search
+        const trainingData = req.body.trainingData || {};
+        const candidateProducts = await getCandidateProducts(userProfile, trainingData);
 
         if (!candidateProducts || candidateProducts.length === 0) {
              return res.status(200).json({ // Podría ser 200 con un mensaje o 404 si lo consideras 'no encontrado'
