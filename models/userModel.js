@@ -47,9 +47,10 @@ class User extends BaseModel {
         gender = 'hombre';
       } else if (gender === 'F' || gender === 'female') {
         gender = 'mujer';
-      } else {
-        gender = 'otro';
+      } else if (!gender || !['hombre', 'mujer', 'otro', 'prefiero no decir'].includes(gender.toLowerCase())) {
+        gender = 'otro'; // Solo usa 'otro' si el valor no es válido
       }
+      // Si ya es 'hombre', 'mujer', 'otro' o 'prefiero no decir', lo deja como está
       
       // Activity Level: ENUM('sedentario', '', 'moderado', 'activo', 'muy activo')
       if (activity_level === 'sedentary') {
