@@ -6,6 +6,7 @@ import {
   getSavedRecommendations
 } from '../controllers/recommendationController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import Feedback from '../models/feedbackModel.js';
 
 const router = express.Router();
 
@@ -39,7 +40,72 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-// Ruta para feedback
+// Ruta para feedback (antigua - puede usar el controller)
 router.post('/feedback', authMiddleware, postRecommendationFeedback);
+
+// Nueva ruta para feedback de productos (más específica)
+router.post('/product-feedback', async (req, res) => {
+  try {
+    const { userId, productId, feedback, notes } = req.body;
+    
+    if (!userId || !productId || !feedback) {
+      return res.status(400).json({
+        success: false,
+        message: 'userId, productId y feedback son requeridos'
+      });
+    }
+    
+    if (!['positivo', 'negativo'].includes(feedback)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Feedback debe ser "positivo" o "negativo"'
+      });
+    }
+    
+    const result = await Feedback.saveFeedback({
+      userId,
+      productId,
+      feedback,
+      notes
+    });
+    
+    res.json(result);
+    
+  } catch (error) {
+    console.error('Error en product-feedback:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al guardar el feedback'
+    });
+  }
+});
+
+// Obtener feedback del usuario para mostrar en UI
+router.get('/user-feedback/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ID de usuario inválido'
+      });
+    }
+    
+    const history = await Feedback.getUserFeedbackHistory(userId);
+    
+    res.json({
+      success: true,
+      feedback: history
+    });
+    
+  } catch (error) {
+    console.error('Error getting user feedback:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener feedback'
+    });
+  }
+});
 
 export default router;

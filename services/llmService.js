@@ -122,6 +122,9 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
       5. La tolerancia a la cafeína debe ser considerada para productos que la contengan.
       6. Si el usuario está en un entrenamiento de larga duración (>60 min), prioriza productos energéticos.
       7. Para entrenamientos de fuerza o hipertrofia, prioriza productos con proteína.
+      8. IMPORTANTE: Los productos en la lista NO incluyen aquellos que el usuario ha marcado como "no funcionaron".
+         Puedes recomendar libremente cualquier producto de la lista, ya que los productos con feedback negativo
+         ya fueron filtrados previamente. Prioriza productos que el usuario haya evaluado positivamente si están disponibles.
     `;
 
     const userMessagePrompt = `

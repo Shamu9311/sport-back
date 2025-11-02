@@ -2,6 +2,7 @@
 import { createConnection } from '../config/db.js';
 import { generateUserProfileEmbedding } from './embeddingServices.js';
 import { findSimilarProducts } from './vectorSearchService.js';
+import Feedback from '../models/feedbackModel.js';
 
 const db = createConnection();
 const MAX_CANDIDATE_PRODUCTS = 20; // Número máximo de productos a recuperar
@@ -30,7 +31,24 @@ export const getCandidateProducts = async (userProfile, trainingData = {}) => {
 
 // Nueva función: Búsqueda con vectores (RAG)
 async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
-    // 1. Generar embedding del perfil del usuario + entrenamiento
+    // 1. Obtener productos con feedback negativo del usuario (EXCLUIR)
+    const excludedProductIds = userProfile.user_id 
+        ? await Feedback.getNegativeFeedbackProducts(userProfile.user_id)
+        : [];
+    
+    // Obtener productos con feedback positivo (PRIORIZAR)
+    const positiveProductIds = userProfile.user_id 
+        ? await Feedback.getPositiveFeedbackProducts(userProfile.user_id)
+        : [];
+    
+    if (excludedProductIds.length > 0) {
+        console.log(`🚫 Excluyendo ${excludedProductIds.length} productos con feedback negativo`);
+    }
+    if (positiveProductIds.length > 0) {
+        console.log(`✅ Priorizando ${positiveProductIds.length} productos con feedback positivo`);
+    }
+    
+    // 2. Generar embedding del perfil del usuario + entrenamiento
     const combinedProfile = {
         ...userProfile,
         training_type: trainingData.type || userProfile.training_type,
@@ -40,16 +58,19 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     
     const userEmbedding = await generateUserProfileEmbedding(combinedProfile);
     
-    // 2. Buscar productos similares por vector (top 30 inicial)
+    // 3. Buscar productos similares por vector (top 30 inicial)
     const similarProductIds = await findSimilarProducts(userEmbedding, 30);
     
-    if (!similarProductIds || similarProductIds.length === 0) {
-        console.warn('⚠️ No se encontraron productos similares, usando SQL como fallback');
-        return await getCandidateProductsWithSQL(userProfile);
+    // 4. Filtrar productos con feedback negativo
+    const filteredIds = similarProductIds.filter(id => !excludedProductIds.includes(id));
+    
+    if (!filteredIds || filteredIds.length === 0) {
+        console.warn('⚠️ No se encontraron productos similares (o todos tienen feedback negativo), usando SQL como fallback');
+        return await getCandidateProductsWithSQL(userProfile, excludedProductIds);
     }
     
-    // 3. Obtener detalles completos de los productos similares
-    const placeholders = similarProductIds.map(() => '?').join(',');
+    // 5. Obtener detalles completos de los productos similares (sin los excluidos)
+    const placeholders = filteredIds.map(() => '?').join(',');
     const [products] = await db.query(`
         SELECT
             p.product_id,
@@ -76,7 +97,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
         WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
         GROUP BY p.product_id
         ORDER BY FIELD(p.product_id, ${placeholders})
-    `, similarProductIds);
+    `, filteredIds);
     
     // 4. Aplicar filtros duros (restricciones absolutas)
     const filtered = products.filter(product => {
@@ -137,7 +158,15 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
 }
 
 // Función original: Búsqueda con SQL (para fallback o cuando vector search está desactivado)
-async function getCandidateProductsWithSQL(userProfile) {
+async function getCandidateProductsWithSQL(userProfile, excludedProductIds = []) {
+    
+    // Obtener productos con feedback negativo si no se pasaron
+    if (excludedProductIds.length === 0 && userProfile.user_id) {
+        excludedProductIds = await Feedback.getNegativeFeedbackProducts(userProfile.user_id);
+        if (excludedProductIds.length > 0) {
+            console.log(`🚫 SQL: Excluyendo ${excludedProductIds.length} productos con feedback negativo`);
+        }
+    }
 
     let query = `
         SELECT
@@ -170,6 +199,13 @@ async function getCandidateProductsWithSQL(userProfile) {
 
     const queryParams = [];
     const whereClauses = [];
+    
+    // Excluir productos con feedback negativo
+    if (excludedProductIds.length > 0) {
+        const placeholders = excludedProductIds.map(() => '?').join(',');
+        whereClauses.push(`p.product_id NOT IN (${placeholders})`);
+        queryParams.push(...excludedProductIds);
+    }
 
     // Filtrar por restricciones dietéticas
     // Esto es simplificado. Si tienes una tabla de unión para user_profile_dietary_restrictions, la query sería más compleja.
