@@ -142,30 +142,45 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
       ${productsString}
       --- FIN PRODUCTOS DISPONIBLES ---
 
-      Por favor, recomienda hasta 3 productos de la lista proporcionada que sean más adecuados para este usuario.
+      IMPORTANTE: Recomienda EXACTAMENTE 3 productos siguiendo esta distribución de timing:
+      1. UN producto para consumir ANTES del entrenamiento (15-30 minutos antes)
+      2. UN producto para consumir DURANTE el entrenamiento
+      3. UN producto para consumir DESPUÉS del entrenamiento (dentro de 30 minutos)
       
-      Para cada producto recomendado, proporciona su 'product_id' (tal como se dio en la entrada) y una 
-      breve 'reasoning' (justificación) de por qué es adecuado para este usuario, basándote en su perfil 
-      y los detalles del producto. Incluye información nutricional relevante en la justificación.
+      REGLAS DE DISTRIBUCIÓN:
+      - Cada producto debe tener un consumption_timing diferente ('antes', 'durante', 'despues')
+      - Si para alguna fase NO existe un producto ideal, selecciona el más cercano o útil
+      - Si definitivamente no hay un producto adecuado para una fase específica, omite esa recomendación
+      - Prioriza productos que naturalmente correspondan a cada fase según su categoría:
+        * ANTES: Productos de energía, pre-workout
+        * DURANTE: Geles, hidratación, electrolitos
+        * DESPUÉS: Recuperación, proteína
+      
+      Para cada producto recomendado, proporciona:
+      - 'product_id': ID numérico del producto
+      - 'reasoning': Justificación específica del por qué es ideal para esta fase y este usuario
+      - 'consumption_timing': 'antes', 'durante' o 'despues' (debe ser diferente para cada producto)
+      - 'timing_minutes': Minutos específicos antes/después (ej: 30 para antes, 30 para después)
+      - 'quantity': Cantidad exacta a consumir
+      - 'instructions': Instrucciones adicionales importantes
 
-      Devuelve tu respuesta ÚNICAMENTE en formato JSON, de la siguiente manera:
+      Devuelve tu respuesta ÚNICAMENTE en formato JSON:
       {
         "recommendations": [
           { 
-            "product_id": <ID_PRODUCTO_1_ENTERO>, 
-            "reasoning": "Justificación concisa para el producto 1...",
+            "product_id": <ID_ENTERO>, 
+            "reasoning": "Justificación...",
             "consumption_timing": "antes|durante|despues",
-            "timing_minutes": 15,
-            "quantity": "1 gel cada 30 minutos",
-            "instructions": "No requiere agua"
+            "timing_minutes": 30,
+            "quantity": "1 porción",
+            "instructions": "Instrucciones específicas"
           }
         ],
-        "llm_overall_reasoning": "Un breve resumen general de tu proceso de pensamiento o por qué estos productos son buenos en conjunto, si aplica."
+        "llm_overall_reasoning": "Resumen de la estrategia de suplementación para este entrenamiento."
       }
 
-      Si no hay productos perfectos, recomienda los que más se acerquen a las necesidades del usuario.
-      Asegúrate de que el 'product_id' sea un NÚMERO ENTERO y que la justificación sea clara y relevante.
-      No incluyas ningún texto introductorio o explicativo fuera del objeto JSON. Solo el JSON.
+      RECUERDA: Cada producto debe tener un consumption_timing DIFERENTE.
+      No incluyas texto fuera del JSON. Solo el JSON.
     `;
 
     // Guardar el prompt exacto para debugging o auditoría
@@ -332,12 +347,51 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
         return { ...product, score };
     });
     
-    // Ordenar por puntaje y tomar los mejores
+    // Ordenar por puntaje
     scoredProducts.sort((a, b) => b.score - a.score);
-    const topProducts = scoredProducts.slice(0, numRecommendations);
     
-    // Generar razones genéricas para cada recomendación con timing de consumo
-    const recommendations = topProducts.map(product => {
+    // Distribuir productos por timing (antes, durante, después)
+    const recommendations = [];
+    const timingNeeded = ['antes', 'durante', 'despues'];
+    const usedTimings = new Set();
+    
+    // Función helper para determinar el timing natural del producto
+    const getNaturalTiming = (product) => {
+        const productName = product.name.toLowerCase();
+        
+        if (productName.includes('rego') || productName.includes('recovery') || productName.includes('protein')) {
+            return 'despues';
+        } else if (productName.includes('gel') || productName.includes('hydro') || productName.includes('electrolyte')) {
+            return 'durante';
+        } else if (productName.includes('energy') || productName.includes('beta fuel')) {
+            return 'antes';
+        } else if (productName.includes('vitamin') || productName.includes('bcaa') || productName.includes('immune')) {
+            return 'diario';
+        }
+        return 'durante'; // Default
+    };
+    
+    // Intentar asignar un producto a cada timing
+    for (const timing of timingNeeded) {
+        const suitableProduct = scoredProducts.find(p => {
+            const naturalTiming = getNaturalTiming(p);
+            return (naturalTiming === timing || naturalTiming === 'diario') && !usedTimings.has(p.product_id);
+        });
+        
+        if (suitableProduct) {
+            usedTimings.add(suitableProduct.product_id);
+            recommendations.push(suitableProduct);
+        }
+    }
+    
+    // Si no conseguimos 3, agregar los mejores que falten
+    if (recommendations.length < 3) {
+        const remaining = scoredProducts.filter(p => !usedTimings.has(p.product_id));
+        recommendations.push(...remaining.slice(0, 3 - recommendations.length));
+    }
+    
+    // Generar detalles de cada recomendación con timing de consumo distribuido
+    const finalRecommendations = recommendations.map((product, index) => {
         let reasoning = `Este producto es adecuado para tu perfil`;
         
         if (userProfile.primary_goal) {
@@ -350,44 +404,44 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
             reasoning += `. Buena fuente de carbohidratos (${product.carbs_g}g).`;
         }
         
-        // Determinar timing de consumo basado en el nombre/categoría del producto
-        let consumption_timing = 'durante';
+        // Determinar timing de consumo basado en el timing asignado
+        const naturalTiming = getNaturalTiming(product);
+        let consumption_timing = naturalTiming;
         let timing_minutes = null;
         let quantity = '1 porción';
         let instructions = 'Seguir indicaciones del empaque';
         
         const productName = product.name.toLowerCase();
         
-        // Productos de energía (antes/durante)
-        if (productName.includes('energy') || productName.includes('gel') || productName.includes('beta fuel')) {
+        // Configurar detalles según el timing
+        if (consumption_timing === 'antes') {
+            timing_minutes = 30;
+            if (productName.includes('energy') || productName.includes('bar')) {
+                quantity = '1 barra o porción';
+                instructions = 'Consumir 30 minutos antes para energía sostenida';
+                reasoning += ' Ideal para preparar tu cuerpo antes del esfuerzo.';
+            }
+        } else if (consumption_timing === 'durante') {
             if (productName.includes('gel')) {
-                consumption_timing = 'durante';
                 quantity = '1 gel cada 30-45 minutos';
                 instructions = 'Consumir con pequeños sorbos de agua si es necesario';
-            } else {
-                consumption_timing = 'antes';
-                timing_minutes = 30;
-                quantity = '1 porción';
+                reasoning += ' Proporciona energía rápida durante el ejercicio.';
+            } else if (productName.includes('hydro') || productName.includes('electrolyte')) {
+                quantity = '500ml durante el entrenamiento';
+                instructions = 'Beber pequeños sorbos cada 15-20 minutos';
+                reasoning += ' Mantiene tu hidratación óptima.';
             }
-        }
-        // Productos de hidratación (durante)
-        else if (productName.includes('hydro') || productName.includes('electrolyte')) {
-            consumption_timing = 'durante';
-            quantity = '500ml durante el entrenamiento';
-            instructions = 'Beber pequeños sorbos cada 15-20 minutos';
-        }
-        // Productos de recuperación (después)
-        else if (productName.includes('rego') || productName.includes('recovery') || productName.includes('protein')) {
-            consumption_timing = 'despues';
+        } else if (consumption_timing === 'despues') {
             timing_minutes = 30;
-            quantity = '1 porción';
-            instructions = 'Consumir dentro de los 30 minutos post-entrenamiento para mejor absorción';
-        }
-        // Vitaminas/BCAA (diario/flexible)
-        else if (productName.includes('vitamin') || productName.includes('bcaa') || productName.includes('immune')) {
-            consumption_timing = 'diario';
-            quantity = '1 tableta al día';
-            instructions = 'Preferiblemente con alimentos';
+            if (productName.includes('rego') || productName.includes('recovery')) {
+                quantity = '1 porción (mezclar con 250ml agua)';
+                instructions = 'Consumir dentro de los 30 minutos post-entrenamiento para mejor absorción';
+                reasoning += ' Acelera tu recuperación muscular.';
+            } else if (productName.includes('protein')) {
+                quantity = '1 porción';
+                instructions = 'Consumir dentro de 30 minutos para máxima síntesis proteica';
+                reasoning += ' Favorece la reconstrucción muscular.';
+            }
         }
         
         return {
@@ -400,9 +454,14 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
         };
     });
     
+    console.log(`✅ Fallback: Generadas ${finalRecommendations.length} recomendaciones distribuidas por timing`);
+    finalRecommendations.forEach(r => {
+        console.log(`   - ${r.consumption_timing.toUpperCase()}: Producto ${r.product_id}`);
+    });
+    
     return {
-        recommendations,
-        llmReasoning: "Recomendaciones basadas en tu perfil y preferencias.",
+        recommendations: finalRecommendations,
+        llmReasoning: "Recomendaciones distribuidas en antes, durante y después del entrenamiento.",
         promptUsed: "Sistema de respaldo (sin LLM)"
     };
 }
