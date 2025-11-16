@@ -20,6 +20,16 @@ class TrainingSession extends BaseModel {
     'caluroso': 'caliente',
     'húmedo': 'humedo'
   };
+  static sportTypeMap = {
+    'ciclismo de ruta': 'ciclismo de ruta',
+    'ciclismo de montaña': 'ciclismo de montaña',
+    'marathon': 'marathon',
+    'Triathlon': 'Triathlon',
+    'natacion': 'natacion',
+    'media marathon': 'media marathon',
+    '10K': '10K',
+    '15K': '15K'
+  };
 
   // Función auxiliar para formatear la fecha al formato YYYY-MM-DD
   static formatDate(dateString) {
@@ -36,6 +46,9 @@ class TrainingSession extends BaseModel {
   // Función para validar y mapear los valores de clima
   static mapWeather(weather) {
     return this.weatherMap[weather.toLowerCase()] || 'moderado'; // Valor por defecto 'moderado'
+  }
+  static mapSportType(sport_type) {
+    return this.sportTypeMap[sport_type.toLowerCase()] || '10K'; // Valor por defecto '10k'
   }
 
 
@@ -55,30 +68,32 @@ class TrainingSession extends BaseModel {
     return rows[0];
   }
 
-  static async createSession({ userId, sessionDate, durationMin, intensity, type, weather, notes }) {
+  static async createSession({ userId, sessionDate, durationMin, intensity, type, weather, sport_type, notes }) {
     const formattedDate = this.formatDate(sessionDate);
     const mappedIntensity = this.mapIntensity(intensity);
     const mappedWeather = this.mapWeather(weather);
+    const mappedSportType = this.mapSportType(sport_type);
     
     const [result] = await this.pool.query(
-      `INSERT INTO ${this.tableName} (user_id, session_date, duration_min, intensity, type, weather, notes) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [userId, formattedDate, durationMin, mappedIntensity, type, mappedWeather, notes]
+      `INSERT INTO ${this.tableName} (user_id, session_date, duration_min, intensity, type, weather, sport_type, notes) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, formattedDate, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes]
     );
     
     return this.findById(result.insertId);
   }
 
-  static async updateSession(sessionId, { sessionDate, durationMin, intensity, type, weather, notes }) {
+  static async updateSession(sessionId, { sessionDate, durationMin, intensity, type, weather, sport_type, notes }) {
     const formattedDate = this.formatDate(sessionDate);
     const mappedIntensity = this.mapIntensity(intensity);
     const mappedWeather = this.mapWeather(weather);
+    const mappedSportType = this.mapSportType(sport_type);
     
     await this.pool.query(
       `UPDATE ${this.tableName} 
-       SET session_date = ?, duration_min = ?, intensity = ?, type = ?, weather = ?, notes = ?
+       SET session_date = ?, duration_min = ?, intensity = ?, type = ?, weather = ?, sport_type = ?, notes = ?
        WHERE session_id = ?`,
-      [formattedDate, durationMin, mappedIntensity, type, mappedWeather, notes, sessionId]
+      [formattedDate, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes, sessionId]
     );
     
     return this.findById(sessionId);

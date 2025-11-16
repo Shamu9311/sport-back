@@ -26,3 +26,14 @@ SELECT
 FROM recommendations
 LIMIT 5;
 
+ALTER TABLE training_sessions 
+ADD COLUMN sport_type ENUM(
+    'ciclismo de ruta',
+    'ciclismo de montaña',
+    'marathon',
+    'media marathon',
+    'trail',
+    'Triathlon',
+    'natacion'
+) DEFAULT NULL AFTER weather;
+

@@ -52,6 +52,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     const combinedProfile = {
         ...userProfile,
         training_type: trainingData.type || userProfile.training_type,
+        sport_type: trainingData.sport_type || userProfile.sport_type,
         intensity: trainingData.intensity || userProfile.intensity,
         duration: trainingData.durationMin || trainingData.duration || 0
     };

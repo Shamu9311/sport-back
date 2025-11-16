@@ -35,7 +35,7 @@ router.get('/:id', async (req, res) => {
 // Create a new training session
 router.post('/', async (req, res) => {
   try {
-    const { userId, session_date, duration_min, intensity, type, weather, notes } = req.body;
+    const { userId, session_date, duration_min, intensity, type, weather, sport_type, notes } = req.body;
     
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required' });
@@ -49,6 +49,7 @@ router.post('/', async (req, res) => {
       intensity,
       type,
       weather,
+      sport_type,
       notes
     });
 
@@ -59,6 +60,7 @@ router.post('/', async (req, res) => {
         intensity,
         durationMin: duration_min,
         weather,
+        sport_type,
         notes
       };
       
@@ -114,7 +116,7 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Training session not found' });
     }
     
-    const { sessionDate, durationMin, intensity, type, weather, notes } = req.body;
+    const { sessionDate, durationMin, intensity, type, weather, sport_type, notes } = req.body;
     
     const updatedSession = await TrainingSession.updateSession(sessionId, {
       sessionDate,
@@ -122,6 +124,7 @@ router.put('/:id', async (req, res) => {
       intensity,
       type,
       weather,
+      sport_type,
       notes
     });
     

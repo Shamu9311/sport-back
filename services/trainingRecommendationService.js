@@ -42,6 +42,7 @@ export default class TrainingRecommendationService {
       const combinedProfile = {
         ...userProfile[0],
         training_type: trainingData.type,
+        sport_type: trainingData.sport_type,
         intensity: trainingData.intensity,
         duration: trainingData.durationMin
       };
@@ -74,6 +75,7 @@ export default class TrainingRecommendationService {
         sweat_level: userProfile[0].sweat_level || 'medio',
         caffeine_tolerance: userProfile[0].caffeine_tolerance || 'medio',
         dietary_restrictions: userProfile[0].dietary_restrictions || 'Ninguna',
+        sport_type: trainingData.sport_type || '10K',
         training_type: trainingData.type,
         intensity: trainingData.intensity,
         duration: trainingData.durationMin,

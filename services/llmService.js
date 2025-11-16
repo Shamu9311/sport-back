@@ -135,6 +135,7 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
 
       Detalles del entrenamiento actual:
       - Tipo: ${userProfile.training_type || 'No especificado'}
+      - Tipo de deporte: ${userProfile.sport_type || 'No especificado'}
       - Intensidad: ${userProfile.training_intensity || 'No especificada'}
       - Duración: ${userProfile.training_duration_min || 'No especificada'} minutos
       - Clima: ${userProfile.training_weather || 'No especificado'}
