@@ -21,14 +21,15 @@ class TrainingSession extends BaseModel {
     'húmedo': 'humedo'
   };
   static sportTypeMap = {
+    '10K': '10K',
+    '15K': '15K',
+    'media marathon': 'media marathon',
+    'marathon': 'marathon',
+    'trail': 'trail',
+    'Triathlon': 'Triathlon',
     'ciclismo de ruta': 'ciclismo de ruta',
     'ciclismo de montaña': 'ciclismo de montaña',
-    'marathon': 'marathon',
-    'Triathlon': 'Triathlon',
     'natacion': 'natacion',
-    'media marathon': 'media marathon',
-    '10K': '10K',
-    '15K': '15K'
   };
 
   // Función auxiliar para formatear la fecha al formato YYYY-MM-DD

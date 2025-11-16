@@ -26,8 +26,12 @@ SELECT
 FROM recommendations
 LIMIT 5;
 
+-- Si la columna no existe, usar ADD COLUMN
+-- Si ya existe, usar MODIFY COLUMN en su lugar
 ALTER TABLE training_sessions 
 ADD COLUMN sport_type ENUM(
+    '10K',
+    '15K',
     'ciclismo de ruta',
     'ciclismo de montaña',
     'marathon',
@@ -36,4 +40,18 @@ ADD COLUMN sport_type ENUM(
     'Triathlon',
     'natacion'
 ) DEFAULT NULL AFTER weather;
+
+-- Si la columna ya existe, ejecutar esto en su lugar:
+-- ALTER TABLE training_sessions 
+-- MODIFY COLUMN sport_type ENUM(
+--     '10K',
+--     '15K',
+--     'ciclismo de ruta',
+--     'ciclismo de montaña',
+--     'marathon',
+--     'media marathon',
+--     'trail',
+--     'Triathlon',
+--     'natacion'
+-- ) DEFAULT NULL;
 
