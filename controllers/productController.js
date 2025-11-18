@@ -163,6 +163,90 @@ class ProductController {
       });
     }
   }
+
+  /**
+   * Búsqueda y filtrado de productos
+   */
+  static async searchProducts(req, res) {
+    try {
+      const { 
+        q = '',              // Texto de búsqueda
+        category = '',       // ID de categoría
+        timing = '',         // Timing de consumo: antes, durante, despues, diario
+        type = ''           // ID de tipo de producto
+      } = req.query;
+
+      let query = `
+        SELECT DISTINCT p.*, 
+               pt.name as type_name,
+               pc.name as category_name
+        FROM products p
+        LEFT JOIN product_types pt ON p.type_id = pt.type_id
+        LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
+      `;
+      
+      const conditions = [];
+      const params = [];
+
+      // Filtro de búsqueda por texto
+      if (q && q.trim() !== '') {
+        conditions.push('(p.name LIKE ? OR p.description LIKE ?)');
+        const searchTerm = `%${q.trim()}%`;
+        params.push(searchTerm, searchTerm);
+      }
+
+      // Filtro por categoría
+      if (category && category !== '') {
+        conditions.push('pc.category_id = ?');
+        params.push(category);
+      }
+
+      // Filtro por tipo de producto
+      if (type && type !== '') {
+        conditions.push('pt.type_id = ?');
+        params.push(type);
+      }
+
+      // Filtro por timing - necesita JOIN con recommendations
+      if (timing && timing !== '') {
+        query = `
+          SELECT DISTINCT p.*, 
+                 pt.name as type_name,
+                 pc.name as category_name,
+                 r.consumption_timing
+          FROM products p
+          LEFT JOIN product_types pt ON p.type_id = pt.type_id
+          LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
+          INNER JOIN recommendations r ON p.product_id = r.product_id
+        `;
+        conditions.push('r.consumption_timing = ?');
+        params.push(timing);
+      }
+
+      // Siempre filtrar productos activos
+      conditions.push('p.is_active = 1');
+
+      // Agregar condiciones WHERE
+      query += ' WHERE ' + conditions.join(' AND ');
+
+      // Ordenar por nombre
+      query += ' ORDER BY p.name ASC';
+
+      const [products] = await Product.pool.query(query, params);
+      
+      res.json({
+        products: products || [],
+        count: products.length,
+        filters: { q, category, timing, type }
+      });
+    } catch (error) {
+      console.error('Error en ProductController.searchProducts:', error);
+      res.status(500).json({ 
+        message: 'Error al buscar productos',
+        error: error.message 
+      });
+    }
+  }
 }
 
 export default ProductController;
