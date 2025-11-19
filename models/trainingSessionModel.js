@@ -69,16 +69,16 @@ class TrainingSession extends BaseModel {
     return rows[0];
   }
 
-  static async createSession({ userId, sessionDate, durationMin, intensity, type, weather, sport_type, notes }) {
+  static async createSession({ userId, sessionDate, startTime, durationMin, intensity, type, weather, sport_type, notes }) {
     const formattedDate = this.formatDate(sessionDate);
     const mappedIntensity = this.mapIntensity(intensity);
     const mappedWeather = this.mapWeather(weather);
     const mappedSportType = this.mapSportType(sport_type);
     
     const [result] = await this.pool.query(
-      `INSERT INTO ${this.tableName} (user_id, session_date, duration_min, intensity, type, weather, sport_type, notes) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, formattedDate, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes]
+      `INSERT INTO ${this.tableName} (user_id, session_date, start_time, duration_min, intensity, type, weather, sport_type, notes) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, formattedDate, startTime, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes]
     );
     
     return this.findById(result.insertId);

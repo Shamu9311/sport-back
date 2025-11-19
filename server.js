@@ -16,12 +16,14 @@ import profileRoutes from './routes/profileRoutes.js';
 import productRoutes from './routes/productRoutes.js';
 import recommendationRoutes from './routes/recommendations.js';
 import trainingRoutes from './routes/trainingRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/training', trainingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Inicio del servidor
 const PORT = process.env.PORT || 5000;
