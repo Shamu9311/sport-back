@@ -1,4 +1,71 @@
 import User from '../models/userModel.js';
+import { createConnection } from '../config/db.js';
+import { getCandidateProducts } from '../services/retrievalService.js';
+import { generateRecommendations } from '../services/llmService.js';
+
+const db = createConnection();
+
+// Función auxiliar para generar recomendaciones iniciales
+async function generateInitialRecommendations(userId) {
+    try {
+        console.log(`Generando recomendaciones iniciales para usuario ${userId}...`);
+        
+        // 1. Obtener perfil de usuario
+        const [profileRows] = await db.query('SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+        if (profileRows.length === 0) {
+            console.log(`No se encontró perfil para usuario ${userId}`);
+            return;
+        }
+        const userProfile = profileRows[0];
+
+        // 2. Obtener productos candidatos
+        const trainingData = {}; // Sin datos de entrenamiento para recomendaciones iniciales
+        const candidateProducts = await getCandidateProducts(userProfile, trainingData);
+
+        if (!candidateProducts || candidateProducts.length === 0) {
+            console.log(`No se encontraron productos candidatos para usuario ${userId}`);
+            return;
+        }
+
+        // 3. Generar recomendaciones con LLM
+        const llmResult = await generateRecommendations(userProfile, candidateProducts, 3);
+        const { recommendations: llmRecommendations, llmReasoning } = llmResult;
+
+        if (!llmRecommendations || llmRecommendations.length === 0) {
+            console.log(`No se generaron recomendaciones del LLM para usuario ${userId}`);
+            return;
+        }
+
+        // 4. Guardar recomendaciones en la base de datos
+        const recommendedProductIds = llmRecommendations.map(rec => rec.product_id).filter(id => typeof id === 'number');
+        
+        if (recommendedProductIds.length > 0) {
+            const placeholders = recommendedProductIds.map(() => '?').join(',');
+            const [products] = await db.query(`
+                SELECT p.product_id, p.name, p.description, p.image_url
+                FROM products p
+                WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
+            `, recommendedProductIds);
+
+            // Guardar en la tabla recommendations
+            const recommendationInserts = products.map(product => {
+                const llmRec = llmRecommendations.find(rec => rec.product_id === product.product_id);
+                const feedbackText = llmRec?.reasoning ? llmRec.reasoning.substring(0, 250) : 'Recomendación inicial basada en tu perfil';
+                const feedbackNotesText = (llmReasoning || 'Recomendación generada automáticamente').substring(0, 255);
+                
+                return db.query(
+                    'INSERT INTO recommendations (user_id, session_id, product_id, recommended_at, feedback, feedback_notes) VALUES (?, NULL, ?, NOW(), ?, ?)',
+                    [userId, product.product_id, feedbackText, feedbackNotesText]
+                );
+            });
+
+            await Promise.all(recommendationInserts);
+            console.log(`✅ Recomendaciones iniciales generadas y guardadas para usuario ${userId}: ${products.length} productos`);
+        }
+    } catch (error) {
+        console.error(`Error generando recomendaciones iniciales para usuario ${userId}:`, error.message);
+    }
+}
 
 export const saveProfile = async (req, res) => {
     try {
@@ -33,6 +100,11 @@ export const saveProfile = async (req, res) => {
 
         // Guardar el perfil
         await User.createUserProfile(userId, profileData);
+
+        // Generar recomendaciones iniciales automáticamente (asíncrono, no bloquea la respuesta)
+        generateInitialRecommendations(userId).catch(err => {
+            console.error(`Error en background generando recomendaciones para usuario ${userId}:`, err);
+        });
 
         res.status(200).json({
             success: true,
