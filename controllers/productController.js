@@ -173,7 +173,9 @@ class ProductController {
         q = '',              // Texto de búsqueda
         category = '',       // ID de categoría
         timing = '',         // Timing de consumo: antes, durante, despues, diario
-        type = ''           // ID de tipo de producto
+        type = '',           // ID de tipo de producto
+        limit = 10,          // Límite de resultados por página
+        offset = 0           // Offset para paginación
       } = req.query;
 
       let query = `
@@ -226,18 +228,53 @@ class ProductController {
       // Siempre filtrar productos activos
       conditions.push('p.is_active = 1');
 
+      // Construir query de conteo
+      let countQuery = `
+        SELECT COUNT(DISTINCT p.product_id) as total
+        FROM products p
+        LEFT JOIN product_types pt ON p.type_id = pt.type_id
+        LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
+      `;
+      
+      // Si hay filtro de timing, agregar JOIN con recommendations
+      if (timing && timing !== '') {
+        countQuery = `
+          SELECT COUNT(DISTINCT p.product_id) as total
+          FROM products p
+          LEFT JOIN product_types pt ON p.type_id = pt.type_id
+          LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
+          INNER JOIN recommendations r ON p.product_id = r.product_id
+        `;
+      }
+      
       // Agregar condiciones WHERE
-      query += ' WHERE ' + conditions.join(' AND ');
+      const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
+      query += whereClause;
+      countQuery += whereClause;
+      
+      // Contar total
+      const countParams = params.slice();
+      const [countResult] = await Product.pool.query(countQuery, countParams);
+      const total = countResult[0]?.total || 0;
 
-      // Ordenar por nombre
+      // Ordenar por nombre y aplicar paginación
       query += ' ORDER BY p.name ASC';
+      query += ` LIMIT ? OFFSET ?`;
+      params.push(parseInt(limit), parseInt(offset));
 
       const [products] = await Product.pool.query(query, params);
       
       res.json({
         products: products || [],
         count: products.length,
-        filters: { q, category, timing, type }
+        total,
+        hasMore: (parseInt(offset) + parseInt(limit)) < total,
+        filters: { q, category, timing, type },
+        pagination: {
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          total
+        }
       });
     } catch (error) {
       console.error('Error en ProductController.searchProducts:', error);
