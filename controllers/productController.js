@@ -209,43 +209,29 @@ class ProductController {
         params.push(type);
       }
 
-      // Filtro por timing - necesita JOIN con recommendations
+      // Filtro por timing - mapear a usage_context de product_categories
       if (timing && timing !== '') {
-        query = `
-          SELECT DISTINCT p.*, 
-                 pt.name as type_name,
-                 pc.name as category_name,
-                 r.consumption_timing
-          FROM products p
-          LEFT JOIN product_types pt ON p.type_id = pt.type_id
-          LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
-          INNER JOIN recommendations r ON p.product_id = r.product_id
-        `;
-        conditions.push('r.consumption_timing = ?');
-        params.push(timing);
+        const timingMap = {
+          'antes': 'pre entrenamiento',
+          'durante': 'durante entrenamiento',
+          'despues': 'post entrenamiento'
+        };
+        
+        const usageContext = timingMap[timing] || timing;
+        conditions.push('pc.usage_context = ?');
+        params.push(usageContext);
       }
 
       // Siempre filtrar productos activos
       conditions.push('p.is_active = 1');
 
-      // Construir query de conteo
+      // Construir query de conteo (sin cambios en la estructura)
       let countQuery = `
         SELECT COUNT(DISTINCT p.product_id) as total
         FROM products p
         LEFT JOIN product_types pt ON p.type_id = pt.type_id
         LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
       `;
-      
-      // Si hay filtro de timing, agregar JOIN con recommendations
-      if (timing && timing !== '') {
-        countQuery = `
-          SELECT COUNT(DISTINCT p.product_id) as total
-          FROM products p
-          LEFT JOIN product_types pt ON p.type_id = pt.type_id
-          LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
-          INNER JOIN recommendations r ON p.product_id = r.product_id
-        `;
-      }
       
       // Agregar condiciones WHERE
       const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
