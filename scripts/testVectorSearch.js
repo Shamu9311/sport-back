@@ -1,17 +1,15 @@
 // Script de prueba para verificar que la búsqueda vectorial funciona
 import { generateUserProfileEmbedding } from '../services/embeddingServices.js';
 import { findSimilarProducts } from '../services/vectorSearchService.js';
-import { createConnection } from '../config/db.js';
+import pool from '../config/db.js';
 import 'dotenv/config';
-
-const db = createConnection();
 
 async function testVectorSearch() {
   try {
     console.log('🧪 Iniciando prueba de búsqueda vectorial...\n');
     
     // 1. Verificar que existen embeddings de productos
-    const [count] = await db.query('SELECT COUNT(*) as total FROM product_embeddings');
+    const [count] = await pool.query('SELECT COUNT(*) as total FROM product_embeddings');
     console.log(`📊 Embeddings en BD: ${count[0].total}`);
     
     if (count[0].total === 0) {
@@ -49,7 +47,7 @@ async function testVectorSearch() {
     // 5. Obtener detalles de los productos encontrados
     if (similarProductIds.length > 0) {
       const placeholders = similarProductIds.map(() => '?').join(',');
-      const [products] = await db.query(`
+      const [products] = await pool.query(`
         SELECT p.product_id, p.name, pc.name as category
         FROM products p
         LEFT JOIN product_types pt ON p.type_id = pt.type_id

@@ -63,8 +63,7 @@ class User extends BaseModel {
         activity_level = 'muy activo';
       }
       
-      // Training Frequency: ENUM('1-2', '3-4', '5+', 'ocacional')
-      // Los valores ya coinciden excepto 'ocacional' que no se usa
+      // Training Frequency: ENUM('1-2', '3-4', '5+', 'ocasional')
       
       // Primary Goal: ENUM('mejor rendimiento', 'perder peso', 'ganar musculo', 'resistencia', 'recuperacion', 'por salud')
       if (primary_goal === 'performance') {

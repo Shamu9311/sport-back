@@ -1001,7 +1001,7 @@ CREATE TABLE `user_profiles` (
   `height` decimal(5,2) DEFAULT NULL,
   `gender` enum('hombre','mujer','otro','prefiero no decir') DEFAULT NULL,
   `activity_level` enum('sedentario','moderado','activo','muy activo') DEFAULT 'moderado',
-  `training_frequency` enum('1-2','3-4','5+','ocacional') DEFAULT NULL,
+  `training_frequency` enum('1-2','3-4','5+','ocasional') DEFAULT NULL,
   `primary_goal` enum('mejor rendimiento','perder peso','ganar musculo','resistencia','recuperacion','por salud') DEFAULT NULL,
   `sweat_level` enum('bajo','medio','alto') DEFAULT NULL,
   `caffeine_tolerance` enum('no','bajo','medio','alto') DEFAULT NULL,

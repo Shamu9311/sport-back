@@ -1,6 +1,4 @@
-import { createConnection } from '../config/db.js';
-
-const db = createConnection();
+import pool from '../config/db.js';
 
 // Calcular similitud coseno entre dos vectores
 export function cosineSimilarity(vecA, vecB) {
@@ -24,7 +22,7 @@ export function cosineSimilarity(vecA, vecB) {
 export async function findSimilarProducts(userEmbedding, topK = 20) {
   try {
     // Obtener todos los productos con sus embeddings
-    const [products] = await db.query(`
+    const [products] = await pool.query(`
       SELECT pe.product_id, pe.embedding, p.name
       FROM product_embeddings pe
       JOIN products p ON pe.product_id = p.product_id

@@ -1,11 +1,16 @@
 import express from 'express';
 import TrainingSession from '../models/trainingSessionModel.js';
 import TrainingRecommendationService from '../services/trainingRecommendationService.js';
+import authMiddleware from '../middleware/authMiddleware.js';
+import {
+  requireMatchingUserId,
+  requireTrainingSessionOwner,
+} from '../middleware/ownershipMiddleware.js';
 
 const router = express.Router();
 
 // Get all training sessions for a user
-router.get('/user/:userId', async (req, res) => {
+router.get('/user/:userId', authMiddleware, requireMatchingUserId('userId'), async (req, res) => {
   try {
     const { userId } = req.params;
     const sessions = await TrainingSession.findByUserId(userId);
@@ -16,29 +21,16 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// Get a specific training session
-router.get('/:id', async (req, res) => {
-  try {
-    const session = await TrainingSession.findById(req.params.id);
-    
-    if (!session) {
-      return res.status(404).json({ message: 'Training session not found' });
-    }
-    
-    res.json(session);
-  } catch (error) {
-    console.error('Error fetching training session:', error);
-    res.status(500).json({ message: 'Error fetching training session' });
-  }
-});
-
-// Create a new training session
-router.post('/', async (req, res) => {
+// Create a new training session (antes de rutas /:id)
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { userId, session_date, start_time, duration_min, intensity, type, weather, sport_type, notes } = req.body;
     
     if (!userId) {
       return res.status(400).json({ message: 'User ID is required' });
+    }
+    if (parseInt(userId, 10) !== req.user.id) {
+      return res.status(403).json({ message: 'Acceso denegado' });
     }
     
     // Crear la sesión de entrenamiento
@@ -70,7 +62,6 @@ router.post('/', async (req, res) => {
         session.session_id, 
         trainingData
       )
-      .then(() => console.log('Recomendaciones generadas exitosamente'))
       .catch(err => console.error('Error generando recomendaciones:', err));
       
     } catch (recError) {
@@ -85,15 +76,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get recommendations for a training session
-router.get('/:id/recommendations', async (req, res) => {
+// Get recommendations for a training session (antes de GET /:id)
+router.get('/:id/recommendations', authMiddleware, requireTrainingSessionOwner, async (req, res) => {
   try {
     const { id: sessionId } = req.params;
-    const userId = req.query.userId;
-    
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
-    }
+    const userId = req.user.id;
     
     const recommendations = await TrainingRecommendationService.getTrainingSessionRecommendations(
       userId,
@@ -107,16 +94,21 @@ router.get('/:id/recommendations', async (req, res) => {
   }
 });
 
+// Get a specific training session
+router.get('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res) => {
+  try {
+    res.json(req.trainingSession);
+  } catch (error) {
+    console.error('Error fetching training session:', error);
+    res.status(500).json({ message: 'Error fetching training session' });
+  }
+});
+
 // Update a training session
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res) => {
   try {
     const sessionId = req.params.id;
-    const existingSession = await TrainingSession.findById(sessionId);
-    
-    if (!existingSession) {
-      return res.status(404).json({ message: 'Training session not found' });
-    }
-    
+
     const { sessionDate, durationMin, intensity, type, weather, sport_type, notes } = req.body;
     
     const updatedSession = await TrainingSession.updateSession(sessionId, {
@@ -137,14 +129,9 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete a training session
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res) => {
   try {
     const sessionId = req.params.id;
-    const existingSession = await TrainingSession.findById(sessionId);
-    
-    if (!existingSession) {
-      return res.status(404).json({ message: 'Training session not found' });
-    }
     
     await TrainingSession.deleteSession(sessionId);
     

@@ -1,13 +1,11 @@
 // Script para ejecutar una sola vez (o cuando agregues productos)
 import { generateProductEmbedding } from '../services/embeddingServices.js';
-import { createConnection } from '../config/db.js';
-
-const db = createConnection();
+import pool from '../config/db.js';
 
 async function generateAllProductEmbeddings() {
   try {
     // Obtener todos los productos
-    const [products] = await db.query(`
+    const [products] = await pool.query(`
       SELECT p.*, 
              pt.name as type_name, 
              pc.name as category_name,
@@ -45,7 +43,7 @@ async function generateAllProductEmbeddings() {
         }
         
         // Guardar en BD
-        await db.query(`
+        await pool.query(`
           INSERT INTO product_embeddings (product_id, embedding, created_at)
           VALUES (?, ?, NOW())
           ON DUPLICATE KEY UPDATE embedding = ?, updated_at = NOW()

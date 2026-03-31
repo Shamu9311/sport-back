@@ -7,6 +7,32 @@ import {
   ProductAttribute 
 } from '../models/index.js';
 
+/**
+ * Respuestas API: siempre `product_name` y `product_description` (compat. con filas `name`/`description` de MySQL).
+ */
+function normalizeProductResponse(product) {
+  if (!product) return product;
+  const product_name = product.product_name ?? product.name;
+  const product_description = product.product_description ?? product.description;
+  const {
+    name: _n,
+    description: _d,
+    product_name: _pn,
+    product_description: _pd,
+    ...rest
+  } = product;
+  return {
+    ...rest,
+    product_name,
+    product_description,
+  };
+}
+
+function normalizeProductsList(products) {
+  if (!Array.isArray(products)) return products;
+  return products.map(normalizeProductResponse);
+}
+
 class ProductController {
   /**
    * Obtener todas las categorías de productos
@@ -42,7 +68,7 @@ class ProductController {
 
       res.json({
         category,
-        products
+        products: normalizeProductsList(products),
       });
     } catch (error) {
       console.error('Error en ProductController.getProductsByCategory:', error);
@@ -65,7 +91,7 @@ class ProductController {
         return res.status(404).json({ message: 'Producto no encontrado' });
       }
 
-      res.json(product);
+      res.json(normalizeProductResponse(product));
     } catch (error) {
       console.error('Error en ProductController.getProductDetails:', error);
       res.status(500).json({ 
@@ -150,10 +176,10 @@ class ProductController {
       }
 
       res.json({
-        ...product,
+        ...normalizeProductResponse(product),
         nutrition: nutrition || {},
         flavors: flavors || [],
-        attributes: attributes || []
+        attributes: attributes || [],
       });
     } catch (error) {
       console.error('Error en ProductController.getFullProductDetails:', error);
@@ -251,7 +277,7 @@ class ProductController {
       const [products] = await Product.pool.query(query, params);
       
       res.json({
-        products: products || [],
+        products: normalizeProductsList(products || []),
         count: products.length,
         total,
         hasMore: (parseInt(offset) + parseInt(limit)) < total,

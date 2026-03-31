@@ -1,10 +1,9 @@
 // services/retrievalService.js
-import { createConnection } from '../config/db.js';
+import pool from '../config/db.js';
 import { generateUserProfileEmbedding } from './embeddingServices.js';
 import { findSimilarProducts } from './vectorSearchService.js';
 import Feedback from '../models/feedbackModel.js';
 
-const db = createConnection();
 const MAX_CANDIDATE_PRODUCTS = 20; // Número máximo de productos a recuperar
 const USE_VECTOR_SEARCH = process.env.USE_VECTOR_SEARCH === 'true'; // Flag para activar/desactivar
 
@@ -72,7 +71,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     
     // 5. Obtener detalles completos de los productos similares (sin los excluidos)
     const placeholders = filteredIds.map(() => '?').join(',');
-    const [products] = await db.query(`
+    const [products] = await pool.query(`
         SELECT
             p.product_id,
             p.name AS product_name,
@@ -310,7 +309,7 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
     // console.log("Query Params:", queryParams); // Para debugging
 
     try {
-        const [rows] = await db.query(query, queryParams);
+        const [rows] = await pool.query(query, queryParams);
         if (rows.length === 0) {
             console.warn("No candidate products found with current filters/profile. Consider broadening criteria or fetching defaults.");
             // Podrías tener una lógica de fallback aquí para devolver algunos productos por defecto si no se encuentra nada.

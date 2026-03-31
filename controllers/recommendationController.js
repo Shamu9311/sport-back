@@ -1,17 +1,15 @@
 // controllers/recommendationController.js
-import { createConnection } from '../config/db.js';
+import pool from '../config/db.js';
 import { Product } from '../models/index.js';
 import { getCandidateProducts } from '../services/retrievalService.js';
 import { generateRecommendations } from '../services/llmService.js';
-
-const db = createConnection();
 
 export const getRecommendations = async (req, res) => {
     const userId = req.user.id; // Asumiendo que tu middleware authMiddleware añade `req.user = { id: userId, ... }`
 
     try {
         // 1. Obtener perfil de usuario
-        const [profileRows] = await db.query('SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+        const [profileRows] = await pool.query('SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
         if (profileRows.length === 0) {
             return res.status(404).json({ message: "User profile not found. Please complete your profile first." });
         }
@@ -69,7 +67,7 @@ export const getRecommendations = async (req, res) => {
                 WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
                 GROUP BY p.product_id, p.name, p.description, p.image_url, p.usage_recommendation, pt.name, pc.name, pc.usage_context
             `;
-            const [detailedProductRows] = await db.query(productDetailsQuery, recommendedProductIds);
+            const [detailedProductRows] = await pool.query(productDetailsQuery, recommendedProductIds);
 
             // Mapear los detalles con el 'reasoning' del LLM
             finalRecommendedProducts = detailedProductRows.map(product => {
@@ -98,7 +96,7 @@ export const getRecommendations = async (req, res) => {
                     const feedbackText = truncateText(rec.reasoning || "Sin razonamiento disponible", 250);
                     const feedbackNotesText = truncateText(llmReasoning || "Recomendación generada basada en tu perfil", 255);
                     
-                    return db.query(
+                    return pool.query(
                         'INSERT INTO recommendations (user_id, session_id, product_id, recommended_at, feedback, feedback_notes) VALUES (?, NULL, ?, NOW(), ?, ?)',
                         [
                             userId,
@@ -137,98 +135,6 @@ export const getRecommendations = async (req, res) => {
     }
 };
 
-
-// TODO: Implementar endpoint de feedback
-/**
- * Endpoint específico para que el frontend obtenga recomendaciones para un usuario
- * Esta función implementa una versión simplificada de recomendaciones
- */
-export const getUserRecommendations = async (req, res) => {
-    try {
-        const userId = parseInt(req.params.userId, 10);
-        
-        if (isNaN(userId) || userId <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido'
-            });
-        }
-
-        console.log(`Obteniendo recomendaciones para el usuario ${userId}`);
-        
-        // 1. Verificar si el usuario tiene un perfil
-        const [profileRows] = await db.query('SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
-        
-        if (profileRows.length === 0) {
-            return res.status(404).json({ 
-                message: "Perfil de usuario no encontrado. Por favor complete su perfil primero.",
-                recommendations: []
-            });
-        }
-
-        // 2. Obtener productos basados en el perfil (simplificado)
-        // En una versión más avanzada, aquí tendrías lógica más sofisticada
-        const userProfile = profileRows[0];
-        
-        // Seleccionar productos apropiados basados en algunos criterios básicos
-        const [products] = await db.query(
-            `SELECT 
-                p.product_id, 
-                p.name AS product_name, 
-                p.description AS product_description, 
-                p.image_url,
-                p.usage_recommendation,
-                pc.name AS category_name
-            FROM products p
-            JOIN product_types pt ON p.type_id = pt.type_id
-            JOIN product_categories pc ON pt.category_id = pc.category_id
-            WHERE p.is_active = 1
-            ORDER BY RAND()
-            LIMIT 6`
-        );
-
-        if (!products || products.length === 0) {
-            return res.status(200).json({ 
-                message: "No se encontraron productos para recomendar.",
-                recommendations: []
-            });
-        }
-
-        // Enriquecemos la respuesta con algunas razones genéricas basadas en el perfil
-        const personalizedProducts = products.map(product => {
-            // Personalización básica según edad, peso o altura
-            let reason = "Recomendado basado en tu perfil";
-            
-            if (userProfile.fitness_goal) {
-                reason += ` y tu objetivo de fitness: ${userProfile.fitness_goal}`;
-            }
-            
-            if (userProfile.age < 30) {
-                reason += ". Ideal para personas jóvenes y activas.";
-            } else if (userProfile.age >= 30 && userProfile.age < 50) {
-                reason += ". Perfecto para adultos que buscan mantener su condición física.";
-            } else {
-                reason += ". Recomendado para mantener la vitalidad en adultos mayores.";
-            }
-            
-            return {
-                ...product,
-                reasoning: reason
-            };
-        });
-
-        // 3. Devolver las recomendaciones
-        res.json(personalizedProducts);
-        
-    } catch (error) {
-        console.error("Error en getUserRecommendations:", error);
-        res.status(500).json({ 
-            message: "Error interno al generar recomendaciones.",
-            error: error.message 
-        });
-    }
-};
-
 export const postRecommendationFeedback = async (req, res) => {
     const userId = req.user.id;
     const { recommendation_id, product_id, feedback, feedback_notes } = req.body; // feedback_notes será la justificación/feedback del usuario
@@ -239,7 +145,7 @@ export const postRecommendationFeedback = async (req, res) => {
 
     try {
         if (recommendation_id) {
-            const [result] = await db.query(
+            const [result] = await pool.query(
                 'UPDATE recommendations SET feedback = ?, feedback_notes = ? WHERE recommendation_id = ? AND user_id = ?',
                 [feedback, feedback_notes || null, recommendation_id, userId]
             );
@@ -249,7 +155,7 @@ export const postRecommendationFeedback = async (req, res) => {
         } else {
             // Fallback si no hay recommendation_id, intentamos actualizar el más reciente para el producto y usuario.
             // Esto es menos preciso. Es mejor tener IDs.
-            const [result] = await db.query(
+            const [result] = await pool.query(
                 `UPDATE recommendations SET feedback = ?, feedback_notes_user = ? 
                  WHERE user_id = ? AND product_id = ? 
                  ORDER BY recommended_at DESC LIMIT 1`,
@@ -271,17 +177,13 @@ export const postRecommendationFeedback = async (req, res) => {
     }
 };
 
-// Obtener recomendaciones guardadas para un usuario
+// Obtener recomendaciones guardadas para un usuario (JWT)
 export const getSavedRecommendations = async (req, res) => {
-    const userId = req.params.userId || req.user?.id;
-    
-    if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
-    }
+    const userId = req.user.id;
 
     try {
         // Obtener las recomendaciones guardadas con detalles del producto
-        const [recommendations] = await db.query(`
+        const [recommendations] = await pool.query(`
             SELECT r.*, p.name as product_name, p.description as product_description, p.image_url,
                    pt.name as type_name, pc.name as category_name
             FROM recommendations r

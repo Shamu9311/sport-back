@@ -44,7 +44,7 @@ class UserProfile extends BaseModel {
   }
 
   static async findByUserId(userId) {
-    const [rows] = await pool.query(
+    const [rows] = await this.pool.query(
       'SELECT * FROM user_profiles WHERE user_id = ?',
       [userId]
     );
