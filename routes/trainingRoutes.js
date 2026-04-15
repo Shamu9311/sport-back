@@ -2,6 +2,7 @@ import express from 'express';
 import TrainingSession from '../models/trainingSessionModel.js';
 import TrainingRecommendationService from '../services/trainingRecommendationService.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import { sendError } from '../utils/apiResponse.js';
 import {
   requireMatchingUserId,
   requireTrainingSessionOwner,
@@ -17,7 +18,7 @@ router.get('/user/:userId', authMiddleware, requireMatchingUserId('userId'), asy
     res.json(sessions);
   } catch (error) {
     console.error('Error fetching training sessions:', error);
-    res.status(500).json({ message: 'Error fetching training sessions' });
+    return sendError(res, 500, 'Error al obtener sesiones de entrenamiento', error);
   }
 });
 
@@ -27,10 +28,10 @@ router.post('/', authMiddleware, async (req, res) => {
     const { userId, session_date, start_time, duration_min, intensity, type, weather, sport_type, notes } = req.body;
     
     if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
+      return sendError(res, 400, 'El ID de usuario es obligatorio');
     }
     if (parseInt(userId, 10) !== req.user.id) {
-      return res.status(403).json({ message: 'Acceso denegado' });
+      return sendError(res, 403, 'Acceso denegado');
     }
     
     // Crear la sesión de entrenamiento
@@ -72,7 +73,7 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json(session);
   } catch (error) {
     console.error('Error creating training session:', error);
-    res.status(500).json({ message: 'Error creating training session' });
+    return sendError(res, 500, 'Error al crear la sesión de entrenamiento', error);
   }
 });
 
@@ -90,7 +91,7 @@ router.get('/:id/recommendations', authMiddleware, requireTrainingSessionOwner, 
     res.json(recommendations);
   } catch (error) {
     console.error('Error getting recommendations:', error);
-    res.status(500).json({ message: 'Error getting recommendations' });
+    return sendError(res, 500, 'Error al obtener recomendaciones de la sesión', error);
   }
 });
 
@@ -100,7 +101,7 @@ router.get('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res)
     res.json(req.trainingSession);
   } catch (error) {
     console.error('Error fetching training session:', error);
-    res.status(500).json({ message: 'Error fetching training session' });
+    return sendError(res, 500, 'Error al obtener la sesión de entrenamiento', error);
   }
 });
 
@@ -124,7 +125,7 @@ router.put('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res)
     res.json(updatedSession);
   } catch (error) {
     console.error('Error updating training session:', error);
-    res.status(500).json({ message: 'Error updating training session' });
+    return sendError(res, 500, 'Error al actualizar la sesión de entrenamiento', error);
   }
 });
 
@@ -138,7 +139,7 @@ router.delete('/:id', authMiddleware, requireTrainingSessionOwner, async (req, r
     res.json({ message: 'Training session deleted successfully' });
   } catch (error) {
     console.error('Error deleting training session:', error);
-    res.status(500).json({ message: 'Error deleting training session' });
+    return sendError(res, 500, 'Error al eliminar la sesión de entrenamiento', error);
   }
 });
 

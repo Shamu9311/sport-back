@@ -1,6 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/userModel.js';
+import { JWT_SECRET, JWT_EXPIRES_IN } from '../config/appConfig.js';
+import { sendError } from '../utils/apiResponse.js';
 
 export const register = async (req, res) => {
   try {
@@ -55,11 +57,7 @@ export const register = async (req, res) => {
 
   } catch (error) {
     console.error('Error en register:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error en el servidor',
-      error: error.message // Opcional: incluir el mensaje de error
-    });
+    return sendError(res, 500, 'Error en el servidor', error);
   }
 };
 
@@ -78,12 +76,12 @@ export const login = async (req, res) => {
 
     // Generar JWT
     const token = jwt.sign(
-      { 
-        id: user.user_id, 
-        email: user.email 
+      {
+        id: user.user_id,
+        email: user.email,
       },
-      process.env.JWT_SECRET || 'default-secret-key-change-in-production',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
     );
 
     res.status(200).json({ 
@@ -100,10 +98,6 @@ export const login = async (req, res) => {
 
   } catch (error) {
     console.error('Error en login:', error);
-    return res.status(500).json({ 
-      success: false, 
-      message: 'Error en el servidor',
-      error: error.message
-    });
+    return sendError(res, 500, 'Error en el servidor', error);
   }
 };

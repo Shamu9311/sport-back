@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import { sendError } from '../utils/apiResponse.js';
 
 class NotificationController {
   /**
@@ -37,11 +38,7 @@ class NotificationController {
       });
     } catch (error) {
       console.error('Error en NotificationController.getPreferences:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error al obtener preferencias de notificaciones',
-        error: error.message,
-      });
+      return sendError(res, 500, 'Error al obtener preferencias de notificaciones', error);
     }
   }
 
@@ -92,11 +89,7 @@ class NotificationController {
       });
     } catch (error) {
       console.error('Error en NotificationController.updatePreferences:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error al actualizar preferencias',
-        error: error.message,
-      });
+      return sendError(res, 500, 'Error al actualizar preferencias', error);
     }
   }
 }

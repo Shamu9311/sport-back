@@ -105,60 +105,82 @@ class Recommendation extends BaseModel {
     return result.insertId;
   }
 
-  // Obtener productos recomendados basados en el perfil y entrenamiento
+  // Obtener productos recomendados (sin ORDER BY RAND: paginación por offset derivado del usuario)
   static async getRecommendedProducts(userId, trainingData) {
     try {
-      // Primero intentamos con productos no recomendados previamente
-      let query = `
-        SELECT p.* 
-        FROM products p
-        WHERE p.is_active = 1
-        AND NOT EXISTS (
-          SELECT 1 FROM recommendations r 
-          WHERE r.product_id = p.product_id 
-          AND r.user_id = ?
-        )
-        ORDER BY RAND() 
-        LIMIT 3`;
+      const uid = Number(userId) || 0;
+      const sessionPart =
+        trainingData && trainingData.sessionId != null ? Number(trainingData.sessionId) : 0;
+      const seed = (uid * 7919 + sessionPart * 31) >>> 0;
 
-      const params = [userId];
+      const notRecommendedSql = `p.is_active = 1 AND NOT EXISTS (
+        SELECT 1 FROM recommendations r
+        WHERE r.product_id = p.product_id
+        AND r.user_id = ?
+      )`;
 
-      // Ejecutar la consulta
-      const [products] = await this.pool.query(query, params);
+      const [countRows] = await this.pool.query(
+        `SELECT COUNT(*) as c FROM products p WHERE ${notRecommendedSql}`,
+        [userId]
+      );
+      const totalFiltered = countRows[0]?.c || 0;
+      let offset = 0;
+      if (totalFiltered > 0) {
+        const maxOff = Math.max(0, totalFiltered - 3);
+        offset = maxOff > 0 ? seed % (maxOff + 1) : 0;
+      }
 
-      // Si no encontramos suficientes productos, buscamos cualquier producto activo
-      if (!products || products.length < 3) {
-        const [additionalProducts] = await this.pool.query(
-          `SELECT p.* 
-           FROM products p
-           WHERE p.is_active = 1
-           ORDER BY RAND() 
-           LIMIT ?`,
-          [3 - (products?.length || 0)]
+      const [rows] = await this.pool.query(
+        `SELECT p.* FROM products p
+         WHERE ${notRecommendedSql}
+         ORDER BY p.product_id ASC
+         LIMIT 3 OFFSET ?`,
+        [userId, offset]
+      );
+
+      let list = rows || [];
+      const existingIds = new Set(list.map((p) => p.product_id));
+
+      if (list.length < 3) {
+        const need = 3 - list.length;
+        const [countAll] = await this.pool.query(
+          `SELECT COUNT(*) as c FROM products p WHERE p.is_active = 1`
         );
-        
-        if (additionalProducts && additionalProducts.length > 0) {
-          products.push(...additionalProducts);
-          // Asegurarnos de no exceder el límite
-          if (products.length > 3) {
-            products.length = 3;
+        const totalAll = countAll[0]?.c || 0;
+        const maxOff2 = Math.max(0, totalAll - (need + 2));
+        const offset2 = maxOff2 > 0 ? (seed ^ 0x9e3779b9) % (maxOff2 + 1) : 0;
+        const [additional] = await this.pool.query(
+          `SELECT p.* FROM products p
+           WHERE p.is_active = 1
+           ORDER BY p.product_id ASC
+           LIMIT ? OFFSET ?`,
+          [need + 8, offset2]
+        );
+        for (const p of additional || []) {
+          if (list.length >= 3) break;
+          if (!existingIds.has(p.product_id)) {
+            existingIds.add(p.product_id);
+            list.push(p);
           }
         }
       }
 
-      // Asegurarnos de que los productos tengan la estructura esperada
-      return (products || []).map(p => ({
+      if (list.length > 3) list = list.slice(0, 3);
+
+      return list.map((p) => ({
         ...p,
         protein_g: p.protein_g || 0,
         carbs_g: p.carbs_g || 0,
         energy_kcal: p.energy_kcal || 0,
         caffeine_mg: p.caffeine_mg || 0,
-        attributes: p.attributes ? (Array.isArray(p.attributes) ? p.attributes : [p.attributes]) : []
+        attributes: p.attributes
+          ? Array.isArray(p.attributes)
+            ? p.attributes
+            : [p.attributes]
+          : [],
       }));
-      
     } catch (error) {
       console.error('Error en getRecommendedProducts:', error);
-      // En caso de error, devolver un array vacío
       return [];
     }
   }

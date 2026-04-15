@@ -6,11 +6,12 @@ import {
 } from '../controllers/recommendationController.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 import Feedback from '../models/feedbackModel.js';
+import { sendError } from '../utils/apiResponse.js';
 
 const router = express.Router();
 
-// Rutas protegidas con JWT
-router.get('/', authMiddleware, getRecommendations);
+// Generar recomendaciones (POST: cuerpo JSON con trainingData opcional; GET con body no es fiable)
+router.post('/', authMiddleware, getRecommendations);
 
 // Recomendaciones guardadas (solo el usuario autenticado)
 router.get('/saved', authMiddleware, getSavedRecommendations);
@@ -24,20 +25,14 @@ router.post('/product-feedback', authMiddleware, async (req, res) => {
     const { userId, productId, feedback, notes } = req.body;
     
     if (!userId || !productId || !feedback) {
-      return res.status(400).json({
-        success: false,
-        message: 'userId, productId y feedback son requeridos'
-      });
+      return sendError(res, 400, 'userId, productId y feedback son requeridos');
     }
     if (parseInt(userId, 10) !== req.user.id) {
-      return res.status(403).json({ success: false, message: 'Acceso denegado' });
+      return sendError(res, 403, 'Acceso denegado');
     }
-    
+
     if (!['positivo', 'negativo'].includes(feedback)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Feedback debe ser "positivo" o "negativo"'
-      });
+      return sendError(res, 400, 'Feedback debe ser "positivo" o "negativo"');
     }
     
     const result = await Feedback.saveFeedback({
@@ -51,10 +46,7 @@ router.post('/product-feedback', authMiddleware, async (req, res) => {
     
   } catch (error) {
     console.error('Error en product-feedback:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al guardar el feedback'
-    });
+    return sendError(res, 500, 'Error al guardar el feedback', error);
   }
 });
 
@@ -72,10 +64,7 @@ router.get('/user-feedback', authMiddleware, async (req, res) => {
     
   } catch (error) {
     console.error('Error getting user feedback:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error al obtener feedback'
-    });
+    return sendError(res, 500, 'Error al obtener feedback', error);
   }
 });
 

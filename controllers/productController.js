@@ -1,11 +1,12 @@
-import { 
-  Product, 
-  ProductCategory, 
+import {
+  Product,
+  ProductCategory,
   ProductType,
   ProductNutrition,
   Flavor,
-  ProductAttribute 
+  ProductAttribute,
 } from '../models/index.js';
+import { sendError } from '../utils/apiResponse.js';
 
 /**
  * Respuestas API: siempre `product_name` y `product_description` (compat. con filas `name`/`description` de MySQL).
@@ -43,10 +44,7 @@ class ProductController {
       res.json(categories);
     } catch (error) {
       console.error('Error en ProductController.getCategories:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener categorías',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener categorías', error);
     }
   }
 
@@ -63,7 +61,7 @@ class ProductController {
       ]);
 
       if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
+        return sendError(res, 404, 'Categoría no encontrada');
       }
 
       res.json({
@@ -72,10 +70,7 @@ class ProductController {
       });
     } catch (error) {
       console.error('Error en ProductController.getProductsByCategory:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener productos por categoría',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener productos por categoría', error);
     }
   }
 
@@ -88,16 +83,13 @@ class ProductController {
       
       const product = await Product.findById(productId);
       if (!product) {
-        return res.status(404).json({ message: 'Producto no encontrado' });
+        return sendError(res, 404, 'Producto no encontrado');
       }
 
       res.json(normalizeProductResponse(product));
     } catch (error) {
       console.error('Error en ProductController.getProductDetails:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener detalles del producto',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener detalles del producto', error);
     }
   }
 
@@ -111,10 +103,7 @@ class ProductController {
       res.json(nutrition || {});
     } catch (error) {
       console.error('Error en ProductController.getProductNutrition:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener información nutricional',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener información nutricional', error);
     }
   }
 
@@ -128,10 +117,7 @@ class ProductController {
       res.json(flavors);
     } catch (error) {
       console.error('Error en ProductController.getProductFlavors:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener sabores del producto',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener sabores del producto', error);
     }
   }
 
@@ -145,10 +131,7 @@ class ProductController {
       res.json(attributes);
     } catch (error) {
       console.error('Error en ProductController.getProductAttributes:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener atributos del producto',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener atributos del producto', error);
     }
   }
 
@@ -172,7 +155,7 @@ class ProductController {
       ]);
 
       if (!product) {
-        return res.status(404).json({ message: 'Producto no encontrado' });
+        return sendError(res, 404, 'Producto no encontrado');
       }
 
       res.json({
@@ -183,10 +166,7 @@ class ProductController {
       });
     } catch (error) {
       console.error('Error en ProductController.getFullProductDetails:', error);
-      res.status(500).json({ 
-        message: 'Error al obtener detalles completos del producto',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al obtener detalles completos del producto', error);
     }
   }
 
@@ -290,10 +270,7 @@ class ProductController {
       });
     } catch (error) {
       console.error('Error en ProductController.searchProducts:', error);
-      res.status(500).json({ 
-        message: 'Error al buscar productos',
-        error: error.message 
-      });
+      return sendError(res, 500, 'Error al buscar productos', error);
     }
   }
 }

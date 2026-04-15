@@ -1,4 +1,5 @@
 import { BaseModel } from './BaseModel.js';
+import pool from '../config/db.js';
 
 class ProductCategory extends BaseModel {
   static tableName = 'product_categories';

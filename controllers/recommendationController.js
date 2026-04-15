@@ -1,8 +1,8 @@
 // controllers/recommendationController.js
 import pool from '../config/db.js';
-import { Product } from '../models/index.js';
 import { getCandidateProducts } from '../services/retrievalService.js';
 import { generateRecommendations } from '../services/llmService.js';
+import { sendError } from '../utils/apiResponse.js';
 
 export const getRecommendations = async (req, res) => {
     const userId = req.user.id; // Asumiendo que tu middleware authMiddleware añade `req.user = { id: userId, ... }`
@@ -11,7 +11,7 @@ export const getRecommendations = async (req, res) => {
         // 1. Obtener perfil de usuario
         const [profileRows] = await pool.query('SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
         if (profileRows.length === 0) {
-            return res.status(404).json({ message: "User profile not found. Please complete your profile first." });
+            return sendError(res, 404, 'Completa tu perfil antes de obtener recomendaciones.');
         }
         const userProfile = profileRows[0];
 
@@ -125,13 +125,16 @@ export const getRecommendations = async (req, res) => {
         console.error("Error in getRecommendations controller:", error);
         // Distinguir errores
         if (error.message.includes("User profile not found") || error.message.includes("No candidate products")) {
-             // Estos errores ya deberían ser manejados arriba y retornar, pero por si acaso.
-            return res.status(404).json({ message: error.message });
+            return sendError(res, 404, error.message);
         }
-        if (error.message.includes("LLM") || error.message.includes("OpenAI")) {
-            return res.status(503).json({ message: "AI service is currently unavailable or failed to process the request." });
+        if (
+            error.message.includes("LLM") ||
+            error.message.includes("OpenAI") ||
+            error.message.includes("Gemini")
+        ) {
+            return sendError(res, 503, 'El servicio de IA no está disponible en este momento. Intenta más tarde.');
         }
-        res.status(500).json({ message: "Internal server error while generating recommendations." });
+        return sendError(res, 500, 'Error al generar recomendaciones.', error);
     }
 };
 
@@ -139,8 +142,8 @@ export const postRecommendationFeedback = async (req, res) => {
     const userId = req.user.id;
     const { recommendation_id, product_id, feedback, feedback_notes } = req.body; // feedback_notes será la justificación/feedback del usuario
 
-    if (!product_id || !feedback) { // recommendation_id podría no existir si no se guardó el ID individual de rec
-        return res.status(400).json({ message: "product_id and feedback are required." });
+    if (!product_id || !feedback) {
+        return sendError(res, 400, 'product_id y feedback son obligatorios.');
     }
 
     try {
@@ -150,7 +153,7 @@ export const postRecommendationFeedback = async (req, res) => {
                 [feedback, feedback_notes || null, recommendation_id, userId]
             );
             if (result.affectedRows === 0) {
-                return res.status(404).json({ message: "Recommendation not found or you are not authorized to update it." });
+                return sendError(res, 404, 'Recomendación no encontrada o no autorizada.');
             }
         } else {
             // Fallback si no hay recommendation_id, intentamos actualizar el más reciente para el producto y usuario.
@@ -165,7 +168,7 @@ export const postRecommendationFeedback = async (req, res) => {
                 // Si no se encontró para actualizar, quizás se debería insertar una entrada de feedback aislada o un log.
                 // O simplemente devolver que no se encontró para actualizar.
                 console.warn(`No recommendation found to update feedback for user ${userId}, product ${product_id}`);
-                return res.status(404).json({ message: "No previous recommendation entry found to update feedback for this product." });
+                return sendError(res, 404, 'No hay recomendación previa para actualizar el feedback de este producto.');
             }
         }
 
@@ -173,7 +176,7 @@ export const postRecommendationFeedback = async (req, res) => {
         res.status(200).json({ message: "Feedback submitted successfully." });
     } catch (error) {
         console.error("Error submitting recommendation feedback:", error);
-        res.status(500).json({ message: "Failed to submit feedback." });
+        return sendError(res, 500, 'No se pudo enviar el feedback.', error);
     }
 };
 
@@ -208,9 +211,6 @@ export const getSavedRecommendations = async (req, res) => {
         });
     } catch (error) {
         console.error("Error getting saved recommendations:", error);
-        res.status(500).json({ 
-            message: "Error retrieving saved recommendations", 
-            error: error.message 
-        });
+        return sendError(res, 500, 'Error al obtener recomendaciones guardadas.', error);
     }
 };

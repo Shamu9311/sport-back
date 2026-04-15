@@ -1,4 +1,5 @@
 import User from '../models/userModel.js';
+import { sendError } from '../utils/apiResponse.js';
 
 export const saveProfile = async (req, res) => {
     try {
@@ -9,26 +10,17 @@ export const saveProfile = async (req, res) => {
         const userId = parseInt(userIdFromParams, 10);
         if (isNaN(userId) || userId <= 0) {
             console.error('[ProfileController] ID de usuario inválido:', userIdFromParams);
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido o faltante'
-            });
+            return sendError(res, 400, 'ID de usuario inválido o faltante');
         }
 
         // Validación de datos del perfil
         if (!profileData.age || !profileData.weight || !profileData.height) {
-            return res.status(400).json({
-                success: false,
-                message: 'Edad, peso y altura son campos obligatorios'
-            });
+            return sendError(res, 400, 'Edad, peso y altura son campos obligatorios');
         }
 
         // Validación adicional de rangos
         if (profileData.age < 12 || profileData.age > 120) {
-            return res.status(400).json({
-                success: false,
-                message: 'La edad debe estar entre 12 y 120 años'
-            });
+            return sendError(res, 400, 'La edad debe estar entre 12 y 120 años');
         }
 
         // Guardar el perfil
@@ -47,18 +39,15 @@ export const saveProfile = async (req, res) => {
         console.error('[ProfileController] Error al guardar perfil:', error);
         
         if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-            return res.status(404).json({
-                success: false,
-                message: 'El usuario asociado no existe'
-            });
+            return sendError(res, 404, 'El usuario asociado no existe');
         }
 
-        res.status(500).json({
-            success: false,
-            message: process.env.NODE_ENV === 'development' 
-                   ? error.message 
-                   : 'Error al guardar el perfil'
-        });
+        return sendError(
+            res,
+            500,
+            process.env.NODE_ENV === 'development' ? error.message : 'Error al guardar el perfil',
+            error
+        );
     }
 };
 
@@ -67,10 +56,7 @@ export const getProfile = async (req, res) => {
         const userId = parseInt(req.params.userId, 10);
         
         if (isNaN(userId) || userId <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'ID de usuario inválido'
-            });
+            return sendError(res, 400, 'ID de usuario inválido');
         }
 
         // Obtener datos de usuario y perfil
@@ -78,10 +64,7 @@ export const getProfile = async (req, res) => {
         const profileData = await User.getUserProfile(userId);
 
         if (!userData) {
-            return res.status(404).json({
-                success: false,
-                message: 'Usuario no encontrado'
-            });
+            return sendError(res, 404, 'Usuario no encontrado');
         }
 
         res.status(200).json({
@@ -98,12 +81,12 @@ export const getProfile = async (req, res) => {
 
     } catch (error) {
         console.error(`[ProfileController] Error:`, error);
-        res.status(500).json({
-            success: false,
-            message: process.env.NODE_ENV === 'development'
-                   ? error.message
-                   : 'Error al obtener el perfil'
-        });
+        return sendError(
+            res,
+            500,
+            process.env.NODE_ENV === 'development' ? error.message : 'Error al obtener el perfil',
+            error
+        );
     }
 };
 

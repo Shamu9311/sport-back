@@ -5,7 +5,6 @@ import ProductType from './productTypeModel.js';
 import Flavor from './flavorModel.js';
 import ProductAttribute from './productAttributeModel.js';
 import ProductNutrition from './productNutritionModel.js';
-import UserProfile from './userProfileModel.js';
 import TrainingSession from './trainingSessionModel.js';
 import Recommendation from './recommendationModel.js';
 
@@ -17,7 +16,6 @@ export {
   Flavor,
   ProductAttribute,
   ProductNutrition,
-  UserProfile,
   TrainingSession,
   Recommendation
 };
