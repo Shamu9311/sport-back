@@ -10,6 +10,11 @@ class User extends BaseModel {
     return rows[0] || null;
   }
 
+  static async findByUsername(username) {
+    const [rows] = await this.pool.query('SELECT * FROM users WHERE username = ?', [username]);
+    return rows[0] || null;
+  }
+
   static async create({ username, email, password }) {
     const [result] = await this.pool.query(
       'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',

@@ -18,7 +18,14 @@ export const getRecommendations = async (req, res) => {
 
         // 2. Paso de Recuperación (Retriever) - Ahora con soporte de vector search
         const trainingData = req.body.trainingData || {};
-        const candidateProducts = await getCandidateProducts(userProfile, trainingData);
+        const enrichedProfile = {
+            ...userProfile,
+            training_type: trainingData.type || userProfile.training_type,
+            sport_type: trainingData.sport_type || userProfile.sport_type,
+            intensity: trainingData.intensity || userProfile.intensity,
+            duration: trainingData.durationMin || trainingData.duration || userProfile.duration,
+        };
+        const candidateProducts = await getCandidateProducts(enrichedProfile, trainingData);
 
         if (!candidateProducts || candidateProducts.length === 0) {
              return sendSuccess(res, 200, {
@@ -28,7 +35,7 @@ export const getRecommendations = async (req, res) => {
         }
 
         // 3. Paso de Aumentación y Generación (LLM)
-        const llmResult = await generateRecommendations(userProfile, candidateProducts, 3); // Pedimos 3 recomendaciones
+        const llmResult = await generateRecommendations(enrichedProfile, candidateProducts, 4);
 
         const { recommendations: llmRecommendations, llmReasoning, promptUsed } = llmResult;
 
@@ -143,6 +150,11 @@ export const postRecommendationFeedback = async (req, res) => {
 
     if (!product_id || !feedback) {
         return sendError(res, 400, 'product_id y feedback son obligatorios.');
+    }
+
+    const validFeedback = ['positivo', 'neutral', 'negativo'];
+    if (!validFeedback.includes(feedback)) {
+        return sendError(res, 400, 'feedback debe ser positivo, neutral o negativo.');
     }
 
     try {

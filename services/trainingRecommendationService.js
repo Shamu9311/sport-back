@@ -29,7 +29,7 @@ export default class TrainingRecommendationService {
           primary_goal: 'mejor rendimiento',
           sweat_level: 'medio',
           caffeine_tolerance: 'medio',
-          dietary_restrictions: 'Ninguna'
+          dietary_restrictions: 'no'
         };
         console.log('Usando perfil por defecto:', defaultProfile);
         userProfile[0] = defaultProfile;
@@ -74,9 +74,13 @@ export default class TrainingRecommendationService {
         primary_goal: userProfile[0].primary_goal || 'mejor rendimiento',
         sweat_level: userProfile[0].sweat_level || 'medio',
         caffeine_tolerance: userProfile[0].caffeine_tolerance || 'medio',
-        dietary_restrictions: userProfile[0].dietary_restrictions || 'Ninguna',
+        dietary_restrictions: userProfile[0].dietary_restrictions || 'no',
         sport_type: trainingData.sport_type || '10K',
         training_type: trainingData.type,
+        training_intensity: trainingData.intensity,
+        training_duration_min: trainingData.durationMin,
+        training_weather: trainingData.weather,
+        training_notes: trainingData.notes || '',
         intensity: trainingData.intensity,
         duration: trainingData.durationMin,
         weather: trainingData.weather,
@@ -89,7 +93,7 @@ export default class TrainingRecommendationService {
       const llmResponse = await getRecommendationsFromLLM(
         profileData,
         products,
-        3 // Número de recomendaciones
+        4
       );
 
       console.log('Respuesta del LLM:', JSON.stringify(llmResponse, null, 2));
@@ -102,6 +106,11 @@ export default class TrainingRecommendationService {
           const product = products.find(p => p.product_id === rec.product_id);
           if (product) {
             try {
+              const instructionsBase = rec.instructions || '';
+              const consumptionInstructions = rec.interval_minutes
+                ? `[interval_minutes=${rec.interval_minutes}] ${instructionsBase}`.trim()
+                : instructionsBase || null;
+
               const recommendation = await Recommendation.createRecommendation({
                 userId,
                 sessionId,
@@ -109,7 +118,7 @@ export default class TrainingRecommendationService {
                 reason: rec.reasoning || 'Recomendación basada en tu entrenamiento',
                 score: rec.score || Math.floor(Math.random() * 50) + 50,
                 consumption_timing: rec.consumption_timing || null,
-                consumption_instructions: rec.instructions || null,
+                consumption_instructions: consumptionInstructions,
                 recommended_quantity: rec.quantity || null,
                 timing_minutes: rec.timing_minutes || null
               });

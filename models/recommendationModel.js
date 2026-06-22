@@ -8,7 +8,6 @@ class Recommendation extends BaseModel {
     const [recommendations] = await this.pool.query(`
       SELECT r.*, 
              p.name as product_name, 
-             p.price, 
              p.image_url, 
              p.description,
              r.consumption_timing,
@@ -49,21 +48,22 @@ class Recommendation extends BaseModel {
     try {
       await connection.beginTransaction();
 
-      // Truncar el motivo si es demasiado largo (máx 250 caracteres)
-      const MAX_FEEDBACK_LENGTH = 250;
-      let feedback = reason || 'Recomendación personalizada';
+      // feedback es ENUM (positivo/neutral/negativo) — solo lo llena el usuario
+      // feedback_notes almacena el razonamiento del LLM
+      const MAX_NOTES_LENGTH = 500;
+      let feedbackNotes = reason || 'Recomendación personalizada';
       
-      if (feedback.length > MAX_FEEDBACK_LENGTH) {
-        console.warn(`El feedback excede el límite de ${MAX_FEEDBACK_LENGTH} caracteres. Truncando...`);
-        feedback = feedback.substring(0, MAX_FEEDBACK_LENGTH - 3) + '...';
+      if (feedbackNotes.length > MAX_NOTES_LENGTH) {
+        console.warn(`El feedback_notes excede el límite de ${MAX_NOTES_LENGTH} caracteres. Truncando...`);
+        feedbackNotes = feedbackNotes.substring(0, MAX_NOTES_LENGTH - 3) + '...';
       }
 
       // Insertar la recomendación
       const [result] = await connection.query(
         `INSERT INTO recommendations 
-        (user_id, session_id, product_id, feedback, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [userId, sessionId, productId, feedback, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes]
+        (user_id, session_id, product_id, feedback, feedback_notes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at)
+        VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, NOW())`,
+        [userId, sessionId, productId, feedbackNotes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes]
       );
 
       // Obtener la recomendación recién creada con los datos del producto
@@ -94,15 +94,12 @@ class Recommendation extends BaseModel {
     }
   }
 
-  // Registrar interacción con la recomendación
+  // Registrar interacción con la recomendación (reservado para uso futuro)
   static async logInteraction(userId, productId, action = 'view') {
-    const [result] = await this.pool.query(
-      `INSERT INTO recommendation_interactions 
-        (user_id, product_id, action, created_at)
-        VALUES (?, ?, ?, NOW())`,
-      [userId, productId, action]
+    console.warn(
+      `logInteraction no implementado: userId=${userId}, productId=${productId}, action=${action}`
     );
-    return result.insertId;
+    return null;
   }
 
   // Obtener productos recomendados (sin ORDER BY RAND: paginación por offset derivado del usuario)

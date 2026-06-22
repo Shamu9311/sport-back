@@ -97,7 +97,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
         WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
         GROUP BY p.product_id
         ORDER BY FIELD(p.product_id, ${placeholders})
-    `, filteredIds);
+    `, [...filteredIds, ...filteredIds]);
     
     // 4. Aplicar filtros duros (restricciones absolutas)
     const filtered = products.filter(product => {

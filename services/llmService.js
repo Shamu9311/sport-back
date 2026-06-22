@@ -59,11 +59,11 @@ const truncateText = (text, maxLength = 200) => {
     return text.length > maxLength ? text.substring(0, maxLength - 3) + "..." : text;
 }
 
-export const generateRecommendations = async (userProfile, candidateProducts, numRecommendations = 3) => {
+export const generateRecommendations = async (userProfile, candidateProducts, numRecommendations = 4) => {
     return getRecommendationsFromLLM(userProfile, candidateProducts, numRecommendations);
 };
 
-export async function getRecommendationsFromLLM(userProfile, candidateProducts, numRecommendations = 3) {
+export async function getRecommendationsFromLLM(userProfile, candidateProducts, numRecommendations = 4) {
     // Si no hay ningún proveedor de LLM disponible, usamos el sistema de respaldo
     if (!hasLLMProvider) {
         console.log(`Using fallback recommendation system for user profile: ${userProfile.user_id}`);
@@ -99,6 +99,7 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
             "name": "${p.name}",
             "category": "${p.category || ''}",
             "type": "${p.type || ''}",
+            "usage_context": "${p.usage_context || ''}",
             "description": "${truncateText(p.description || '', 150)}",
             "usage_recommendation": "${truncateText(p.usage_recommendation || '', 100)}",
             "attributes": ${p.attributes ? `["${p.attributes.join('", "')}"]` : '[]'},
@@ -125,6 +126,8 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
       8. IMPORTANTE: Los productos en la lista NO incluyen aquellos que el usuario ha marcado como "no funcionaron".
          Puedes recomendar libremente cualquier producto de la lista, ya que los productos con feedback negativo
          ya fueron filtrados previamente. Prioriza productos que el usuario haya evaluado positivamente si están disponibles.
+      9. Cada producto incluye "usage_context" (pre entrenamiento, durante entrenamiento, post entrenamiento, diario).
+         DEBES respetar ese campo al asignar consumption_timing. Solo recomienda un producto para una fase si su usage_context coincide.
     `;
 
     const userMessagePrompt = `
@@ -146,25 +149,32 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
       ${productsString}
       --- FIN PRODUCTOS DISPONIBLES ---
 
-      IMPORTANTE: Recomienda EXACTAMENTE 3 productos siguiendo esta distribución de timing:
+      IMPORTANTE: Recomienda EXACTAMENTE 4 productos siguiendo esta distribución de timing:
       1. UN producto para consumir ANTES del entrenamiento (15-30 minutos antes)
       2. UN producto para consumir DURANTE el entrenamiento
       3. UN producto para consumir DESPUÉS del entrenamiento (dentro de 30 minutos)
+      4. UN producto de consumo DIARIO (vitaminas, suplementos base, bienestar general)
       
       REGLAS DE DISTRIBUCIÓN:
-      - Cada producto debe tener un consumption_timing diferente ('antes', 'durante', 'despues')
-      - Si para alguna fase NO existe un producto ideal, selecciona el más cercano o útil
-      - Si definitivamente no hay un producto adecuado para una fase específica, omite esa recomendación
-      - Prioriza productos que naturalmente correspondan a cada fase según su categoría:
-        * ANTES: Productos de energía, pre-workout
-        * DURANTE: Geles, hidratación, electrolitos
-        * DESPUÉS: Recuperación, proteína
+      - Cada producto debe tener un consumption_timing diferente: 'antes', 'durante', 'despues', 'diario'
+      - Usa el campo "usage_context" de cada producto para elegir el timing correcto:
+        * usage_context "pre entrenamiento" → consumption_timing "antes"
+        * usage_context "durante entrenamiento" → consumption_timing "durante"
+        * usage_context "post entrenamiento" → consumption_timing "despues"
+        * usage_context "diario" → consumption_timing "diario"
+      - Si para alguna fase NO hay producto con usage_context adecuado, elige el más cercano por categoría
+      - Prioriza productos que naturalmente correspondan a cada fase:
+        * ANTES: energía, pre-workout
+        * DURANTE: geles, hidratación, electrolitos
+        * DESPUÉS: recuperación, proteína
+        * DIARIO: vitaminas, BCAA, suplementos de uso diario
       
       Para cada producto recomendado, proporciona:
       - 'product_id': ID numérico del producto
       - 'reasoning': Justificación específica del por qué es ideal para esta fase y este usuario
-      - 'consumption_timing': 'antes', 'durante' o 'despues' (debe ser diferente para cada producto)
-      - 'timing_minutes': Minutos específicos antes/después (ej: 30 para antes, 30 para después)
+      - 'consumption_timing': 'antes', 'durante', 'despues' o 'diario' (uno distinto por producto)
+      - 'timing_minutes': Minutos antes/después del entrenamiento (ej: 30). Para 'durante' y 'diario' puede ser null
+      - 'interval_minutes': Solo para consumption_timing 'durante'. Cada cuántos minutos repetir consumo (ej: 30, 45). Obligatorio si es durante
       - 'quantity': Cantidad exacta a consumir
       - 'instructions': Instrucciones adicionales importantes
 
@@ -174,8 +184,9 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
           { 
             "product_id": <ID_ENTERO>, 
             "reasoning": "Justificación...",
-            "consumption_timing": "antes|durante|despues",
+            "consumption_timing": "antes|durante|despues|diario",
             "timing_minutes": 30,
+            "interval_minutes": 45,
             "quantity": "1 porción",
             "instructions": "Instrucciones específicas"
           }
@@ -183,7 +194,7 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
         "llm_overall_reasoning": "Resumen de la estrategia de suplementación para este entrenamiento."
       }
 
-      RECUERDA: Cada producto debe tener un consumption_timing DIFERENTE.
+      RECUERDA: Debes devolver 4 recomendaciones con consumption_timing distinto (antes, durante, despues, diario).
       No incluyas texto fuera del JSON. Solo el JSON.
     `;
 
@@ -208,7 +219,7 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
                 ],
                 response_format: { type: "json_object" }, // Esto es clave para asegurar salida JSON con modelos compatibles
                 temperature: 0.3, // Más bajo para respuestas más deterministas y factuales
-                max_tokens: 800, // Ajusta según la longitud esperada de la respuesta y los productos
+                max_tokens: 1200,
             });
             llmResponseContent = completion.choices[0].message.content;
         } 
@@ -220,7 +231,7 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
             // Configurar el modelo de generación
             const genParams = {
                 temperature: 0.3,
-                maxOutputTokens: 800,
+                maxOutputTokens: 1200,
             };
             
             // Hacer la llamada a la API de Gemini
@@ -285,7 +296,17 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
 }
 
 // Sistema de recomendaciones de respaldo (simplificado sin LLM)
-function getFallbackRecommendations(userProfile, candidateProducts, numRecommendations = 3) {
+function mapUsageContextToTiming(usageContext) {
+    if (!usageContext) return null;
+    const ctx = String(usageContext).toLowerCase();
+    if (ctx.includes('pre entrenamiento')) return 'antes';
+    if (ctx.includes('durante entrenamiento')) return 'durante';
+    if (ctx.includes('post entrenamiento')) return 'despues';
+    if (ctx.includes('diario')) return 'diario';
+    return null;
+}
+
+function getFallbackRecommendations(userProfile, candidateProducts, numRecommendations = 4) {
     console.log("Using fallback recommendation system for user profile:", userProfile.user_id);
     
     // Si no hay productos candidatos, devolver array vacío
@@ -324,7 +345,7 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
         // Verificar restricciones dietéticas
         if (userProfile.dietary_restrictions) {
             const restrictions = userProfile.dietary_restrictions.toLowerCase();
-            const attributes = product.attributes.map(a => a.toLowerCase());
+            const attributes = (product.attributes || []).map(a => a.toLowerCase());
             
             if (restrictions.includes('vegano') && !attributes.includes('vegano')) {
                 score -= 1000; // Penalizar fuertemente si no cumple la restricción
@@ -354,70 +375,83 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
     // Ordenar por puntaje
     scoredProducts.sort((a, b) => b.score - a.score);
     
-    // Distribuir productos por timing (antes, durante, después)
-    const recommendations = [];
-    const timingNeeded = ['antes', 'durante', 'despues'];
-    const usedTimings = new Set();
-    
-    // Función helper para determinar el timing natural del producto
+    // Distribuir productos por timing (antes, durante, después, diario)
+    const timingNeeded = ['antes', 'durante', 'despues', 'diario'];
+    const usedProductIds = new Set();
+    const assignedSlots = [];
+
     const getNaturalTiming = (product) => {
-        const productName = product.name.toLowerCase();
-        
+        const fromContext = mapUsageContextToTiming(product.usage_context);
+        if (fromContext) return fromContext;
+
+        const productName = (product.name || '').toLowerCase();
+
         if (productName.includes('rego') || productName.includes('recovery') || productName.includes('protein')) {
             return 'despues';
-        } else if (productName.includes('gel') || productName.includes('hydro') || productName.includes('electrolyte')) {
+        }
+        if (productName.includes('gel') || productName.includes('hydro') || productName.includes('electrolyte')) {
             return 'durante';
-        } else if (productName.includes('energy') || productName.includes('beta fuel')) {
+        }
+        if (productName.includes('energy') || productName.includes('beta fuel')) {
             return 'antes';
-        } else if (productName.includes('vitamin') || productName.includes('bcaa') || productName.includes('immune')) {
+        }
+        if (productName.includes('vitamin') || productName.includes('bcaa') || productName.includes('immune')) {
             return 'diario';
         }
-        return 'durante'; // Default
+        return 'durante';
     };
-    
-    // Intentar asignar un producto a cada timing
+
     for (const timing of timingNeeded) {
-        const suitableProduct = scoredProducts.find(p => {
-            const naturalTiming = getNaturalTiming(p);
-            return (naturalTiming === timing || naturalTiming === 'diario') && !usedTimings.has(p.product_id);
+        const suitableProduct = scoredProducts.find((p) => {
+            if (usedProductIds.has(p.product_id)) return false;
+            return getNaturalTiming(p) === timing;
         });
-        
+
         if (suitableProduct) {
-            usedTimings.add(suitableProduct.product_id);
-            recommendations.push(suitableProduct);
+            usedProductIds.add(suitableProduct.product_id);
+            assignedSlots.push({ product: suitableProduct, timing });
         }
     }
-    
-    // Si no conseguimos 3, agregar los mejores que falten
-    if (recommendations.length < 3) {
-        const remaining = scoredProducts.filter(p => !usedTimings.has(p.product_id));
-        recommendations.push(...remaining.slice(0, 3 - recommendations.length));
+
+    // Completar slots vacíos con mejores candidatos restantes
+    for (const timing of timingNeeded) {
+        if (assignedSlots.some((slot) => slot.timing === timing)) continue;
+        const fallbackProduct = scoredProducts.find((p) => !usedProductIds.has(p.product_id));
+        if (fallbackProduct) {
+            usedProductIds.add(fallbackProduct.product_id);
+            assignedSlots.push({ product: fallbackProduct, timing });
+        }
     }
-    
-    // Generar detalles de cada recomendación con timing de consumo distribuido
-    const finalRecommendations = recommendations.map((product, index) => {
+
+    if (assignedSlots.length < numRecommendations) {
+        const remaining = scoredProducts.filter((p) => !usedProductIds.has(p.product_id));
+        for (const product of remaining.slice(0, numRecommendations - assignedSlots.length)) {
+            usedProductIds.add(product.product_id);
+            assignedSlots.push({ product, timing: getNaturalTiming(product) });
+        }
+    }
+
+    const finalRecommendations = assignedSlots.slice(0, numRecommendations).map(({ product, timing }) => {
         let reasoning = `Este producto es adecuado para tu perfil`;
-        
+
         if (userProfile.primary_goal) {
             reasoning += ` y tu objetivo de ${userProfile.primary_goal}`;
         }
-        
+
         if (product.protein_g && product.protein_g > 15) {
             reasoning += `. Alto contenido de proteínas (${product.protein_g}g).`;
         } else if (product.carbs_g && product.carbs_g > 20) {
             reasoning += `. Buena fuente de carbohidratos (${product.carbs_g}g).`;
         }
-        
-        // Determinar timing de consumo basado en el timing asignado
-        const naturalTiming = getNaturalTiming(product);
-        let consumption_timing = naturalTiming;
+
+        const consumption_timing = timing;
         let timing_minutes = null;
+        let interval_minutes = null;
         let quantity = '1 porción';
         let instructions = 'Seguir indicaciones del empaque';
-        
-        const productName = product.name.toLowerCase();
-        
-        // Configurar detalles según el timing
+
+        const productName = (product.name || '').toLowerCase();
+
         if (consumption_timing === 'antes') {
             timing_minutes = 30;
             if (productName.includes('energy') || productName.includes('bar')) {
@@ -426,11 +460,13 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
                 reasoning += ' Ideal para preparar tu cuerpo antes del esfuerzo.';
             }
         } else if (consumption_timing === 'durante') {
+            interval_minutes = productName.includes('gel') ? 45 : 30;
             if (productName.includes('gel')) {
-                quantity = '1 gel cada 30-45 minutos';
+                quantity = `1 gel cada ${interval_minutes} minutos`;
                 instructions = 'Consumir con pequeños sorbos de agua si es necesario';
                 reasoning += ' Proporciona energía rápida durante el ejercicio.';
             } else if (productName.includes('hydro') || productName.includes('electrolyte')) {
+                interval_minutes = 20;
                 quantity = '500ml durante el entrenamiento';
                 instructions = 'Beber pequeños sorbos cada 15-20 minutos';
                 reasoning += ' Mantiene tu hidratación óptima.';
@@ -446,26 +482,31 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
                 instructions = 'Consumir dentro de 30 minutos para máxima síntesis proteica';
                 reasoning += ' Favorece la reconstrucción muscular.';
             }
+        } else if (consumption_timing === 'diario') {
+            quantity = '1 porción diaria';
+            instructions = 'Consumir a la misma hora cada día, preferiblemente con el desayuno';
+            reasoning += ' Complementa tu nutrición diaria.';
         }
-        
+
         return {
             product_id: product.product_id,
-            reasoning: reasoning,
-            consumption_timing: consumption_timing,
-            timing_minutes: timing_minutes,
-            quantity: quantity,
-            instructions: instructions
+            reasoning,
+            consumption_timing,
+            timing_minutes,
+            interval_minutes,
+            quantity,
+            instructions,
         };
     });
-    
+
     console.log(`✅ Fallback: Generadas ${finalRecommendations.length} recomendaciones distribuidas por timing`);
-    finalRecommendations.forEach(r => {
+    finalRecommendations.forEach((r) => {
         console.log(`   - ${r.consumption_timing.toUpperCase()}: Producto ${r.product_id}`);
     });
-    
+
     return {
         recommendations: finalRecommendations,
-        llmReasoning: "Recomendaciones distribuidas en antes, durante y después del entrenamiento.",
-        promptUsed: "Sistema de respaldo (sin LLM)"
+        llmReasoning: 'Recomendaciones distribuidas en antes, durante, después y diario.',
+        promptUsed: 'Sistema de respaldo (sin LLM)',
     };
 }

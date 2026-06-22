@@ -41,8 +41,8 @@ export function getCorsOptions() {
 
   if (allowedList.length === 0) {
     if (isProduction) {
-      console.warn(
-        '[appConfig] CORS_ORIGIN no definido: se acepta cualquier origen. Configure CORS_ORIGIN para restringir.'
+      throw new Error(
+        'CORS_ORIGIN es obligatorio en producción. Defínalo en las variables de entorno.'
       );
     }
     return { origin: true, credentials: true };

@@ -21,8 +21,8 @@ class ProductAttribute extends BaseModel {
       const attributeIds = [];
       for (const attr of attributes) {
         const [result] = await connection.query(
-          'INSERT INTO product_attributes (name, value_type) VALUES (?, ?)',
-          [attr.name, attr.valueType]
+          'INSERT INTO product_attributes (name) VALUES (?)',
+          [attr.name]
         );
         attributeIds.push(result.insertId);
       }

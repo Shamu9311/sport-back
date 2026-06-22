@@ -16,10 +16,10 @@ class ProductCategory extends BaseModel {
     return categories;
   }
 
-  static async createWithImage({ name, description, imageUrl }) {
+  static async createWithImage({ name, description }) {
     const [result] = await pool.query(
-      'INSERT INTO product_categories (name, description, image_url) VALUES (?, ?, ?)',
-      [name, description, imageUrl]
+      'INSERT INTO product_categories (name, description) VALUES (?, ?)',
+      [name, description]
     );
     return this.findById(result.insertId);
   }

@@ -21,12 +21,12 @@ class TrainingSession extends BaseModel {
     'húmedo': 'humedo'
   };
   static sportTypeMap = {
-    '10K': '10K',
-    '15K': '15K',
+    '10k': '10K',
+    '15k': '15K',
     'media marathon': 'media marathon',
     'marathon': 'marathon',
     'trail': 'trail',
-    'Triathlon': 'Triathlon',
+    'triathlon': 'Triathlon',
     'ciclismo de ruta': 'ciclismo de ruta',
     'ciclismo de montaña': 'ciclismo de montaña',
     'natacion': 'natacion',
@@ -41,15 +41,18 @@ class TrainingSession extends BaseModel {
 
   // Función para validar y mapear los valores de intensidad
   static mapIntensity(intensity) {
-    return this.intensityMap[intensity.toLowerCase()] || 'medio'; // Valor por defecto 'medio'
+    if (!intensity) return 'medio';
+    return this.intensityMap[intensity.toLowerCase()] || 'medio';
   }
 
   // Función para validar y mapear los valores de clima
   static mapWeather(weather) {
-    return this.weatherMap[weather.toLowerCase()] || 'moderado'; // Valor por defecto 'moderado'
+    if (!weather) return 'moderado';
+    return this.weatherMap[weather.toLowerCase()] || 'moderado';
   }
   static mapSportType(sport_type) {
-    return this.sportTypeMap[sport_type.toLowerCase()] || '10K'; // Valor por defecto '10k'
+    if (!sport_type) return '10K';
+    return this.sportTypeMap[sport_type.toLowerCase()] || '10K';
   }
 
 
@@ -84,7 +87,7 @@ class TrainingSession extends BaseModel {
     return this.findById(result.insertId);
   }
 
-  static async updateSession(sessionId, { sessionDate, durationMin, intensity, type, weather, sport_type, notes }) {
+  static async updateSession(sessionId, { sessionDate, startTime, durationMin, intensity, type, weather, sport_type, notes }) {
     const formattedDate = this.formatDate(sessionDate);
     const mappedIntensity = this.mapIntensity(intensity);
     const mappedWeather = this.mapWeather(weather);
@@ -92,9 +95,9 @@ class TrainingSession extends BaseModel {
     
     await this.pool.query(
       `UPDATE ${this.tableName} 
-       SET session_date = ?, duration_min = ?, intensity = ?, type = ?, weather = ?, sport_type = ?, notes = ?
+       SET session_date = ?, start_time = ?, duration_min = ?, intensity = ?, type = ?, weather = ?, sport_type = ?, notes = ?
        WHERE session_id = ?`,
-      [formattedDate, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes, sessionId]
+      [formattedDate, startTime, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes, sessionId]
     );
     
     return this.findById(sessionId);

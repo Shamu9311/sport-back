@@ -34,6 +34,14 @@ export const register = async (req, res) => {
       });
     }
 
+    const existingUsername = await User.findByUsername(username);
+    if (existingUsername) {
+      return res.status(409).json({
+        success: false,
+        message: 'El nombre de usuario ya está en uso'
+      });
+    }
+
     // Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
