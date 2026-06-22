@@ -8,7 +8,9 @@ class ProductCategory extends BaseModel {
   static async findWithProducts() {
     const [categories] = await pool.query(`
       SELECT c.*, 
-        (SELECT COUNT(*) FROM products WHERE category_id = c.id) as product_count
+        (SELECT COUNT(*) FROM products p
+         INNER JOIN product_types pt ON p.type_id = pt.type_id
+         WHERE pt.category_id = c.category_id) as product_count
       FROM ${this.tableName} c
     `);
     return categories;

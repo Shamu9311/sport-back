@@ -95,16 +95,6 @@ class User extends BaseModel {
       } else if (caffeine_tolerance === 'high') {
         caffeine_tolerance = 'alto';
       }
-      
-      console.log('Valores mapeados para la base de datos:', {
-        gender,
-        activity_level,
-        training_frequency,
-        primary_goal,
-        sweat_level,
-        caffeine_tolerance
-      });
-      
       // Asegurar que dietary_restrictions sea un valor válido del ENUM
       if (Array.isArray(dietary_restrictions)) {
         // Si hay restricciones dietéticas, usar la primera (la base de datos solo acepta una)
@@ -139,9 +129,6 @@ class User extends BaseModel {
           dietary_restrictions = 'no';
         }
       }
-      
-      console.log('Valor final de dietary_restrictions:', dietary_restrictions);
-      
       if (existingProfile && existingProfile.length > 0) {
         // Actualizar perfil existente
         await this.pool.query(

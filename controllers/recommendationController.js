@@ -2,7 +2,8 @@
 import pool from '../config/db.js';
 import { getCandidateProducts } from '../services/retrievalService.js';
 import { generateRecommendations } from '../services/llmService.js';
-import { sendError } from '../utils/apiResponse.js';
+import { sendError, sendSuccess } from '../utils/apiResponse.js';
+import Feedback from '../models/feedbackModel.js';
 
 export const getRecommendations = async (req, res) => {
     const userId = req.user.id; // Asumiendo que tu middleware authMiddleware añade `req.user = { id: userId, ... }`
@@ -20,9 +21,9 @@ export const getRecommendations = async (req, res) => {
         const candidateProducts = await getCandidateProducts(userProfile, trainingData);
 
         if (!candidateProducts || candidateProducts.length === 0) {
-             return res.status(200).json({ // Podría ser 200 con un mensaje o 404 si lo consideras 'no encontrado'
-                message: "No suitable products found based on your current profile and our catalog filters. You can try adjusting your profile.",
-                recommendations: []
+             return sendSuccess(res, 200, {
+                message: 'No se encontraron productos adecuados según tu perfil. Puedes ajustar tu perfil e intentar de nuevo.',
+                data: { recommendations: [] }
             });
         }
 
@@ -32,9 +33,9 @@ export const getRecommendations = async (req, res) => {
         const { recommendations: llmRecommendations, llmReasoning, promptUsed } = llmResult;
 
         if (!llmRecommendations || llmRecommendations.length === 0) {
-            return res.status(200).json({
-                message: llmReasoning || "The AI assistant couldn't find specific recommendations from the candidates based on your profile. You can try adjusting your profile.",
-                recommendations: []
+            return sendSuccess(res, 200, {
+                message: llmReasoning || 'El asistente de IA no encontró recomendaciones específicas. Puedes ajustar tu perfil e intentar de nuevo.',
+                data: { recommendations: [] }
             });
         }
 
@@ -89,21 +90,19 @@ export const getRecommendations = async (req, res) => {
                         return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
                     };
                     
-                    // Usar las columnas correctas que existen en la tabla
-                    // Usando session_id como NULL ya que no está disponible en este contexto
-                    // Usando feedback para almacenar el razonamiento específico del producto (máx 250 caracteres)
-                    // Usando feedback_notes para almacenar el razonamiento general del LLM (máx 255 caracteres)
-                    const feedbackText = truncateText(rec.reasoning || "Sin razonamiento disponible", 250);
-                    const feedbackNotesText = truncateText(llmReasoning || "Recomendación generada basada en tu perfil", 255);
-                    
+                    // feedback es ENUM (positivo/neutral/negativo) — solo lo llena el usuario
+                    // feedback_notes almacena el razonamiento del LLM
+                    const productReasoning = truncateText(rec.reasoning || 'Sin razonamiento disponible', 500);
+                    const generalReasoning = llmReasoning
+                        ? truncateText(llmReasoning, 500)
+                        : '';
+                    const feedbackNotesText = generalReasoning
+                        ? `${productReasoning} | ${generalReasoning}`
+                        : productReasoning;
+
                     return pool.query(
-                        'INSERT INTO recommendations (user_id, session_id, product_id, recommended_at, feedback, feedback_notes) VALUES (?, NULL, ?, NOW(), ?, ?)',
-                        [
-                            userId,
-                            rec.product_id,
-                            feedbackText,
-                            feedbackNotesText
-                        ]
+                        'INSERT INTO recommendations (user_id, session_id, product_id, recommended_at, feedback, feedback_notes) VALUES (?, NULL, ?, NOW(), NULL, ?)',
+                        [userId, rec.product_id, feedbackNotesText]
                     );
                 } catch (error) {
                     console.error(`Error al insertar recomendación para producto ${rec.product_id}:`, error);
@@ -116,9 +115,9 @@ export const getRecommendations = async (req, res) => {
 
 
         // 6. Devolver los productos detallados y su razonamiento
-        res.json({
-            message: llmReasoning || "Recommendations generated successfully.",
-            recommendations: finalRecommendedProducts
+        return sendSuccess(res, 200, {
+            message: llmReasoning || 'Recomendaciones generadas correctamente.',
+            data: { recommendations: finalRecommendedProducts }
         });
 
     } catch (error) {
@@ -159,7 +158,7 @@ export const postRecommendationFeedback = async (req, res) => {
             // Fallback si no hay recommendation_id, intentamos actualizar el más reciente para el producto y usuario.
             // Esto es menos preciso. Es mejor tener IDs.
             const [result] = await pool.query(
-                `UPDATE recommendations SET feedback = ?, feedback_notes_user = ? 
+                `UPDATE recommendations SET feedback = ?, feedback_notes = ? 
                  WHERE user_id = ? AND product_id = ? 
                  ORDER BY recommended_at DESC LIMIT 1`,
                 [feedback, feedback_notes || null, userId, product_id]
@@ -173,7 +172,7 @@ export const postRecommendationFeedback = async (req, res) => {
         }
 
 
-        res.status(200).json({ message: "Feedback submitted successfully." });
+        return sendSuccess(res, 200, { message: 'Feedback enviado correctamente.' });
     } catch (error) {
         console.error("Error submitting recommendation feedback:", error);
         return sendError(res, 500, 'No se pudo enviar el feedback.', error);
@@ -199,18 +198,62 @@ export const getSavedRecommendations = async (req, res) => {
         `, [userId]);
 
         if (recommendations.length === 0) {
-            return res.status(200).json({
-                message: "No recommendations found for this user",
-                recommendations: []
+            return sendSuccess(res, 200, {
+                message: 'No se encontraron recomendaciones para este usuario.',
+                data: { recommendations: [] }
             });
         }
 
-        res.json({
-            message: "Recommendations retrieved successfully",
-            recommendations: recommendations
+        return sendSuccess(res, 200, {
+            message: 'Recomendaciones obtenidas correctamente.',
+            data: { recommendations }
         });
     } catch (error) {
         console.error("Error getting saved recommendations:", error);
         return sendError(res, 500, 'Error al obtener recomendaciones guardadas.', error);
+    }
+};
+
+export const postProductFeedback = async (req, res) => {
+    try {
+        const { userId, productId, feedback, notes } = req.body;
+
+        if (!userId || !productId || !feedback) {
+            return sendError(res, 400, 'userId, productId y feedback son requeridos');
+        }
+        if (parseInt(userId, 10) !== req.user.id) {
+            return sendError(res, 403, 'Acceso denegado');
+        }
+
+        if (!['positivo', 'negativo'].includes(feedback)) {
+            return sendError(res, 400, 'Feedback debe ser "positivo" o "negativo"');
+        }
+
+        const result = await Feedback.saveFeedback({
+            userId,
+            productId,
+            feedback,
+            notes
+        });
+
+        return sendSuccess(res, 200, { data: result, message: 'Feedback guardado correctamente.' });
+    } catch (error) {
+        console.error('Error en product-feedback:', error);
+        return sendError(res, 500, 'Error al guardar el feedback', error);
+    }
+};
+
+export const getUserFeedback = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const history = await Feedback.getUserFeedbackHistory(userId);
+
+        return sendSuccess(res, 200, {
+            message: 'Historial de feedback obtenido correctamente.',
+            data: { feedback: history }
+        });
+    } catch (error) {
+        console.error('Error getting user feedback:', error);
+        return sendError(res, 500, 'Error al obtener feedback', error);
     }
 };

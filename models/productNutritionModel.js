@@ -16,17 +16,17 @@ class ProductNutrition extends BaseModel {
     if (existing) {
       const [result] = await this.pool.query(
         `UPDATE ${this.tableName} SET 
-          calories = ?, protein = ?, carbs = ?, fat = ?
+          energy_kcal = ?, protein_g = ?, carbs_g = ?, sugars_g = ?
           WHERE product_id = ?`,
-        [data.calories, data.protein, data.carbs, data.fat, productId]
+        [data.energy_kcal, data.protein_g, data.carbs_g, data.sugars_g, productId]
       );
       return result.affectedRows > 0;
     } else {
       const [result] = await this.pool.query(
         `INSERT INTO ${this.tableName} 
-          (product_id, calories, protein, carbs, fat)
+          (product_id, energy_kcal, protein_g, carbs_g, sugars_g)
           VALUES (?, ?, ?, ?, ?)`,
-        [productId, data.calories, data.protein, data.carbs, data.fat]
+        [productId, data.energy_kcal, data.protein_g, data.carbs_g, data.sugars_g]
       );
       return result.insertId;
     }

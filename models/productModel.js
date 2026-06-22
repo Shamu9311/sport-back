@@ -14,23 +14,23 @@ class Product extends BaseModel {
     return rows;
   }
 
-  static async createWithAttributes({ name, price, categoryId, attributes }) {
+  static async createWithAttributes({ name, typeId, description, attributes }) {
     const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
 
       const [productResult] = await connection.query(
-        'INSERT INTO products (name, price, category_id) VALUES (?, ?, ?)',
-        [name, price, categoryId]
+        'INSERT INTO products (name, type_id, description) VALUES (?, ?, ?)',
+        [name, typeId, description || null]
       );
 
       const productId = productResult.insertId;
       
-      // Insertar atributos relacionados
+      // Insertar atributos relacionados vía tabla de mapeo
       for (const attr of attributes) {
         await connection.query(
-          'INSERT INTO product_attributes (product_id, name, value) VALUES (?, ?, ?)',
-          [productId, attr.name, attr.value]
+          'INSERT INTO product_attributes_mapping (product_id, attribute_id) VALUES (?, ?)',
+          [productId, attr.attributeId]
         );
       }
 

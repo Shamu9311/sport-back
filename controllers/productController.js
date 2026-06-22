@@ -6,7 +6,7 @@ import {
   Flavor,
   ProductAttribute,
 } from '../models/index.js';
-import { sendError } from '../utils/apiResponse.js';
+import { sendError, sendSuccess } from '../utils/apiResponse.js';
 
 /**
  * Respuestas API: siempre `product_name` y `product_description` (compat. con filas `name`/`description` de MySQL).
@@ -41,7 +41,7 @@ class ProductController {
   static async getCategories(req, res) {
     try {
       const categories = await ProductCategory.findAll();
-      res.json(categories);
+      return sendSuccess(res, 200, { data: categories });
     } catch (error) {
       console.error('Error en ProductController.getCategories:', error);
       return sendError(res, 500, 'Error al obtener categorías', error);
@@ -64,9 +64,11 @@ class ProductController {
         return sendError(res, 404, 'Categoría no encontrada');
       }
 
-      res.json({
-        category,
-        products: normalizeProductsList(products),
+      return sendSuccess(res, 200, {
+        data: {
+          category,
+          products: normalizeProductsList(products),
+        },
       });
     } catch (error) {
       console.error('Error en ProductController.getProductsByCategory:', error);
@@ -86,7 +88,7 @@ class ProductController {
         return sendError(res, 404, 'Producto no encontrado');
       }
 
-      res.json(normalizeProductResponse(product));
+      return sendSuccess(res, 200, { data: normalizeProductResponse(product) });
     } catch (error) {
       console.error('Error en ProductController.getProductDetails:', error);
       return sendError(res, 500, 'Error al obtener detalles del producto', error);
@@ -100,7 +102,7 @@ class ProductController {
     try {
       const { productId } = req.params;
       const nutrition = await ProductNutrition.getByProduct(productId);
-      res.json(nutrition || {});
+      return sendSuccess(res, 200, { data: nutrition || {} });
     } catch (error) {
       console.error('Error en ProductController.getProductNutrition:', error);
       return sendError(res, 500, 'Error al obtener información nutricional', error);
@@ -114,7 +116,7 @@ class ProductController {
     try {
       const { productId } = req.params;
       const flavors = await Flavor.getByProduct(productId);
-      res.json(flavors);
+      return sendSuccess(res, 200, { data: flavors });
     } catch (error) {
       console.error('Error en ProductController.getProductFlavors:', error);
       return sendError(res, 500, 'Error al obtener sabores del producto', error);
@@ -128,7 +130,7 @@ class ProductController {
     try {
       const { productId } = req.params;
       const attributes = await ProductAttribute.getByProduct(productId);
-      res.json(attributes);
+      return sendSuccess(res, 200, { data: attributes });
     } catch (error) {
       console.error('Error en ProductController.getProductAttributes:', error);
       return sendError(res, 500, 'Error al obtener atributos del producto', error);
@@ -158,11 +160,13 @@ class ProductController {
         return sendError(res, 404, 'Producto no encontrado');
       }
 
-      res.json({
-        ...normalizeProductResponse(product),
-        nutrition: nutrition || {},
-        flavors: flavors || [],
-        attributes: attributes || [],
+      return sendSuccess(res, 200, {
+        data: {
+          ...normalizeProductResponse(product),
+          nutrition: nutrition || {},
+          flavors: flavors || [],
+          attributes: attributes || [],
+        },
       });
     } catch (error) {
       console.error('Error en ProductController.getFullProductDetails:', error);
@@ -256,17 +260,19 @@ class ProductController {
 
       const [products] = await Product.pool.query(query, params);
       
-      res.json({
-        products: normalizeProductsList(products || []),
-        count: products.length,
-        total,
-        hasMore: (parseInt(offset) + parseInt(limit)) < total,
-        filters: { q, category, timing, type },
-        pagination: {
-          limit: parseInt(limit),
-          offset: parseInt(offset),
-          total
-        }
+      return sendSuccess(res, 200, {
+        data: {
+          products: normalizeProductsList(products || []),
+          count: products.length,
+          total,
+          hasMore: (parseInt(offset) + parseInt(limit)) < total,
+          filters: { q, category, timing, type },
+          pagination: {
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            total
+          }
+        },
       });
     } catch (error) {
       console.error('Error en ProductController.searchProducts:', error);

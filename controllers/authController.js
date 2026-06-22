@@ -64,6 +64,10 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return sendError(res, 400, 'Email y contraseña son obligatorios');
+    }
     
     const user = await User.findByEmail(email);
     

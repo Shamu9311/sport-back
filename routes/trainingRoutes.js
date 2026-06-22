@@ -2,7 +2,7 @@ import express from 'express';
 import TrainingSession from '../models/trainingSessionModel.js';
 import TrainingRecommendationService from '../services/trainingRecommendationService.js';
 import authMiddleware from '../middleware/authMiddleware.js';
-import { sendError } from '../utils/apiResponse.js';
+import { sendError, sendSuccess } from '../utils/apiResponse.js';
 import {
   requireMatchingUserId,
   requireTrainingSessionOwner,
@@ -15,7 +15,7 @@ router.get('/user/:userId', authMiddleware, requireMatchingUserId('userId'), asy
   try {
     const { userId } = req.params;
     const sessions = await TrainingSession.findByUserId(userId);
-    res.json(sessions);
+    return sendSuccess(res, 200, { data: sessions });
   } catch (error) {
     console.error('Error fetching training sessions:', error);
     return sendError(res, 500, 'Error al obtener sesiones de entrenamiento', error);
@@ -70,7 +70,7 @@ router.post('/', authMiddleware, async (req, res) => {
       // No fallar la petición si hay error en recomendaciones
     }
     
-    res.status(201).json(session);
+    return sendSuccess(res, 201, { data: session, message: 'Sesión de entrenamiento creada correctamente.' });
   } catch (error) {
     console.error('Error creating training session:', error);
     return sendError(res, 500, 'Error al crear la sesión de entrenamiento', error);
@@ -88,7 +88,7 @@ router.get('/:id/recommendations', authMiddleware, requireTrainingSessionOwner, 
       sessionId
     );
     
-    res.json(recommendations);
+    return sendSuccess(res, 200, { data: recommendations });
   } catch (error) {
     console.error('Error getting recommendations:', error);
     return sendError(res, 500, 'Error al obtener recomendaciones de la sesión', error);
@@ -98,7 +98,7 @@ router.get('/:id/recommendations', authMiddleware, requireTrainingSessionOwner, 
 // Get a specific training session
 router.get('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res) => {
   try {
-    res.json(req.trainingSession);
+    return sendSuccess(res, 200, { data: req.trainingSession });
   } catch (error) {
     console.error('Error fetching training session:', error);
     return sendError(res, 500, 'Error al obtener la sesión de entrenamiento', error);
@@ -110,11 +110,12 @@ router.put('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res)
   try {
     const sessionId = req.params.id;
 
-    const { sessionDate, durationMin, intensity, type, weather, sport_type, notes } = req.body;
+    const { session_date, start_time, duration_min, intensity, type, weather, sport_type, notes } = req.body;
     
     const updatedSession = await TrainingSession.updateSession(sessionId, {
-      sessionDate,
-      durationMin,
+      sessionDate: session_date,
+      startTime: start_time,
+      durationMin: duration_min,
       intensity,
       type,
       weather,
@@ -122,7 +123,7 @@ router.put('/:id', authMiddleware, requireTrainingSessionOwner, async (req, res)
       notes
     });
     
-    res.json(updatedSession);
+    return sendSuccess(res, 200, { data: updatedSession, message: 'Sesión de entrenamiento actualizada correctamente.' });
   } catch (error) {
     console.error('Error updating training session:', error);
     return sendError(res, 500, 'Error al actualizar la sesión de entrenamiento', error);
@@ -136,7 +137,7 @@ router.delete('/:id', authMiddleware, requireTrainingSessionOwner, async (req, r
     
     await TrainingSession.deleteSession(sessionId);
     
-    res.json({ message: 'Training session deleted successfully' });
+    return sendSuccess(res, 200, { message: 'Sesión de entrenamiento eliminada correctamente.' });
   } catch (error) {
     console.error('Error deleting training session:', error);
     return sendError(res, 500, 'Error al eliminar la sesión de entrenamiento', error);
