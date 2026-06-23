@@ -20,10 +20,9 @@ const recommendationsLimiter = rateLimit({
 });
 
 router.use(authMiddleware);
-router.use(recommendationsLimiter);
 
 // Generar recomendaciones (POST: cuerpo JSON con trainingData opcional; GET con body no es fiable)
-router.post('/', getRecommendations);
+router.post('/', recommendationsLimiter, getRecommendations);
 
 // Recomendaciones guardadas (solo el usuario autenticado)
 router.get('/saved', getSavedRecommendations);
