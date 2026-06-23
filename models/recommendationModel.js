@@ -3,26 +3,6 @@ import { BaseModel } from './BaseModel.js';
 class Recommendation extends BaseModel {
   static tableName = 'recommendations';
 
-  // Obtener recomendaciones personalizadas
-  static async getPersonalized(userId, limit = 5) {
-    const [recommendations] = await this.pool.query(`
-      SELECT r.*, 
-             p.name as product_name, 
-             p.image_url, 
-             p.description,
-             r.consumption_timing,
-             r.consumption_instructions,
-             r.recommended_quantity,
-             r.timing_minutes
-      FROM recommendations r
-      JOIN products p ON r.product_id = p.product_id
-      WHERE r.user_id = ?
-      ORDER BY r.recommended_at DESC
-      LIMIT ?
-    `, [userId, limit]);
-    return recommendations;
-  }
-
   // Obtener recomendaciones para un entrenamiento específico
   static async getByTrainingSession(userId, sessionId) {
     const [recommendations] = await this.pool.query(`
@@ -92,14 +72,6 @@ class Recommendation extends BaseModel {
     } finally {
       connection.release();
     }
-  }
-
-  // Registrar interacción con la recomendación (reservado para uso futuro)
-  static async logInteraction(userId, productId, action = 'view') {
-    console.warn(
-      `logInteraction no implementado: userId=${userId}, productId=${productId}, action=${action}`
-    );
-    return null;
   }
 
   // Obtener productos recomendados (sin ORDER BY RAND: paginación por offset derivado del usuario)

@@ -56,10 +56,11 @@ class TrainingSession extends BaseModel {
   }
 
 
-  static async findByUserId(userId) {
+  static async findByUserId(userId, limit = 50) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
     const [rows] = await this.pool.query(
-      `SELECT * FROM ${this.tableName} WHERE user_id = ? ORDER BY session_date DESC`,
-      [userId]
+      `SELECT * FROM ${this.tableName} WHERE user_id = ? ORDER BY session_date DESC LIMIT ?`,
+      [userId, safeLimit]
     );
     return rows;
   }

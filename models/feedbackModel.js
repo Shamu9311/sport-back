@@ -59,14 +59,16 @@ class Feedback extends BaseModel {
   }
 
   // Obtener historial completo de feedback del usuario
-  static async getUserFeedbackHistory(userId) {
+  static async getUserFeedbackHistory(userId, limit = 100) {
+    const safeLimit = Math.min(Math.max(Number(limit) || 100, 1), 200);
     const [rows] = await this.pool.query(`
       SELECT f.*, p.name as product_name, p.image_url
       FROM ${this.tableName} f
       JOIN products p ON f.product_id = p.product_id
       WHERE f.user_id = ?
       ORDER BY f.created_at DESC
-    `, [userId]);
+      LIMIT ?
+    `, [userId, safeLimit]);
     
     return rows;
   }

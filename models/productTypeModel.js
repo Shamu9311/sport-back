@@ -11,15 +11,6 @@ class ProductType extends BaseModel {
     );
     return rows;
   }
-
-  static async getFullHierarchy() {
-    const [types] = await pool.query(`
-      SELECT pt.*, pc.name as category_name
-      FROM product_types pt
-      JOIN product_categories pc ON pt.category_id = pc.category_id
-    `);
-    return types;
-  }
 }
 
 export default ProductType;

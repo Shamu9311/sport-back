@@ -194,6 +194,8 @@ export const postRecommendationFeedback = async (req, res) => {
 // Obtener recomendaciones guardadas para un usuario (JWT)
 export const getSavedRecommendations = async (req, res) => {
     const userId = req.user.id;
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
+    const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
     try {
         // Obtener las recomendaciones guardadas con detalles del producto
@@ -206,8 +208,8 @@ export const getSavedRecommendations = async (req, res) => {
             LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
             WHERE r.user_id = ?
             ORDER BY r.recommended_at DESC
-            LIMIT 10
-        `, [userId]);
+            LIMIT ? OFFSET ?
+        `, [userId, limit, offset]);
 
         if (recommendations.length === 0) {
             return sendSuccess(res, 200, {

@@ -57,9 +57,28 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     };
     
     const userEmbedding = await generateUserProfileEmbedding(combinedProfile);
+
+    // 3. Pre-filtrar pool de productos activos antes de cargar embeddings (reduce memoria/CPU)
+    let candidatePoolQuery = `
+      SELECT p.product_id
+      FROM products p
+      WHERE p.is_active = 1
+    `;
+    const candidatePoolParams = [];
+    if (excludedProductIds.length > 0) {
+      const placeholders = excludedProductIds.map(() => '?').join(',');
+      candidatePoolQuery += ` AND p.product_id NOT IN (${placeholders})`;
+      candidatePoolParams.push(...excludedProductIds);
+    }
+    candidatePoolQuery += ' LIMIT 100';
+    const [candidatePoolRows] = await pool.query(candidatePoolQuery, candidatePoolParams);
+    const candidateProductIds = candidatePoolRows.map((row) => row.product_id);
     
-    // 3. Buscar productos similares por vector (top 30 inicial)
-    const similarProductIds = await findSimilarProducts(userEmbedding, 30);
+    // 4. Buscar productos similares por vector (top 30 inicial) dentro del pool pre-filtrado
+    const similarProductIds = await findSimilarProducts(userEmbedding, 30, {
+      excludeProductIds: excludedProductIds,
+      candidateProductIds,
+    });
     
     // 4. Filtrar productos con feedback negativo
     const filteredIds = similarProductIds.filter(id => !excludedProductIds.includes(id));

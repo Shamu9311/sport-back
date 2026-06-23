@@ -2,6 +2,7 @@ import './config/appConfig.js';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { getCorsOptions } from './config/appConfig.js';
 import pool from './config/db.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
@@ -12,6 +13,15 @@ app.use(helmet());
 app.use(cors(getCorsOptions()));
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { success: false, message: 'Demasiadas solicitudes. Intenta más tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
 
 import authRoutes from './routes/authRoutes.js';
 import profileRoutes from './routes/profileRoutes.js';
