@@ -7,7 +7,7 @@ const router = express.Router();
 // Rate limiting para prevenir fuerza bruta en auth
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 10, // máximo 10 intentos por ventana
+  max: parseInt(process.env.RATE_LIMIT_MAX_AUTH || '10', 10),
   message: {
     success: false,
     message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.',

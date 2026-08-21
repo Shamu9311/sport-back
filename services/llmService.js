@@ -63,7 +63,42 @@ export const generateRecommendations = async (userProfile, candidateProducts, nu
     return getRecommendationsFromLLM(userProfile, candidateProducts, numRecommendations);
 };
 
+const MOCK_TIMINGS = ['antes', 'durante', 'despues', 'diario'];
+
+function buildMockLLMResponse(userProfile, candidateProducts, numRecommendations = 4) {
+    const selected = candidateProducts.slice(0, numRecommendations);
+    const recommendations = selected.map((product, index) => ({
+        product_id: product.product_id,
+        reasoning: `Recomendación mock para ${product.name}`,
+        consumption_timing: MOCK_TIMINGS[index] || 'durante',
+        timing_minutes: index === 0 ? 30 : index === 2 ? 30 : null,
+        interval_minutes: index === 1 ? 45 : null,
+        quantity: '1 porción',
+        instructions: 'Instrucciones mock de prueba',
+    }));
+
+    return {
+        recommendations,
+        llmReasoning: 'Respuesta mock para pruebas automatizadas',
+        promptUsed: 'MOCK_LLM',
+    };
+}
+
 export async function getRecommendationsFromLLM(userProfile, candidateProducts, numRecommendations = 4) {
+    if (process.env.MOCK_LLM === 'true') {
+        const delayMs = parseInt(process.env.MOCK_LLM_DELAY_MS || '300', 10);
+        if (delayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+        if (!userProfile) {
+            throw new Error('User profile is required for LLM recommendation.');
+        }
+        if (!candidateProducts || candidateProducts.length === 0) {
+            return { recommendations: [], llmReasoning: 'No se encontraron productos candidatos iniciales para evaluar.' };
+        }
+        return buildMockLLMResponse(userProfile, candidateProducts, numRecommendations);
+    }
+
     // Si no hay ningún proveedor de LLM disponible, usamos el sistema de respaldo
     if (!hasLLMProvider) {
         console.log(`Using fallback recommendation system for user profile: ${userProfile.user_id}`);
@@ -510,3 +545,5 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
         promptUsed: 'Sistema de respaldo (sin LLM)',
     };
 }
+
+export { getFallbackRecommendations };

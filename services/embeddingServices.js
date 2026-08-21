@@ -17,8 +17,26 @@ if (hasGeminiKey) {
   console.warn('⚠️ GEMINI_API_KEY is missing. Embeddings will not work.');
 }
 
+function generateDeterministicEmbedding(text, dimensions = 768) {
+  const source = String(text || 'default');
+  const vector = new Array(dimensions);
+  let seed = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    seed = (seed * 31 + source.charCodeAt(i)) % 2147483647;
+  }
+  for (let i = 0; i < dimensions; i += 1) {
+    seed = (seed * 1103515245 + 12345 + i) % 2147483647;
+    vector[i] = ((seed % 2000) - 1000) / 1000;
+  }
+  return vector;
+}
+
 // Convertir texto a vectores usando Gemini
 export async function generateEmbedding(text) {
+  if (process.env.MOCK_EMBEDDINGS === 'true') {
+    return generateDeterministicEmbedding(text);
+  }
+
   if (!geminiClient) {
     throw new Error('Gemini client not initialized. Check GEMINI_API_KEY in .env');
   }

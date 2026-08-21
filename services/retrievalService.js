@@ -356,3 +356,5 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
         throw new Error("Failed to retrieve candidate products from database.");
     }
 }
+
+export { getCandidateProductsWithSQL };

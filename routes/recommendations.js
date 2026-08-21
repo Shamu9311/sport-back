@@ -13,7 +13,7 @@ const router = express.Router();
 
 const recommendationsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
+  max: parseInt(process.env.RATE_LIMIT_MAX_RECS || '30', 10),
   message: { success: false, message: 'Demasiadas solicitudes de recomendaciones. Intenta más tarde.' },
   standardHeaders: true,
   legacyHeaders: false,
