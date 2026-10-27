@@ -22,6 +22,10 @@ class Recommendation extends BaseModel {
     return recommendations;
   }
 
+  static async deleteBySession(sessionId) {
+    await this.pool.query(`DELETE FROM ${this.tableName} WHERE session_id = ?`, [sessionId]);
+  }
+
   // Crear una nueva recomendación
   static async createRecommendation({ userId, sessionId, productId, reason, score, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes }) {
     const connection = await this.pool.getConnection();

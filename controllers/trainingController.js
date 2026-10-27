@@ -1,6 +1,39 @@
 import TrainingSession from '../models/trainingSessionModel.js';
+import Recommendation from '../models/recommendationModel.js';
 import TrainingRecommendationService from '../services/trainingRecommendationService.js';
 import { sendError, sendSuccess } from '../utils/apiResponse.js';
+
+const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+
+function validateTrainingFields(body, { requireAll = false } = {}) {
+  const duration = body.duration_min ?? body.durationMin;
+  if (requireAll || duration !== undefined) {
+    const d = parseInt(duration, 10);
+    if (!Number.isFinite(d) || d < 1 || d > 1440) {
+      return 'La duración debe estar entre 1 y 1440 minutos.';
+    }
+  }
+  const start = body.start_time ?? body.startTime;
+  if (requireAll || start !== undefined) {
+    const timeStr = String(start ?? '').substring(0, 8);
+    if (!timeStr || !TIME_RE.test(timeStr)) {
+      return 'Hora de inicio inválida. Usa formato HH:MM.';
+    }
+  }
+  const date = body.session_date ?? body.sessionDate;
+  if (requireAll || date !== undefined) {
+    const formatted = TrainingSession.formatDate(date);
+    if (!formatted) {
+      return 'Fecha de sesión inválida.';
+    }
+  }
+  return null;
+}
+
+function shouldRegenerateRecommendations(body) {
+  const keys = ['duration_min', 'durationMin', 'intensity', 'type', 'sport_type', 'weather'];
+  return keys.some((k) => Object.prototype.hasOwnProperty.call(body, k));
+}
 
 export const getUserSessions = async (req, res) => {
   try {
@@ -22,6 +55,11 @@ export const createSession = async (req, res) => {
     }
     if (parseInt(userId, 10) !== req.user.id) {
       return sendError(res, 403, 'Acceso denegado');
+    }
+
+    const validationError = validateTrainingFields(req.body, { requireAll: true });
+    if (validationError) {
+      return sendError(res, 400, validationError);
     }
 
     const session = await TrainingSession.createSession({
@@ -94,25 +132,41 @@ export const getSession = async (req, res) => {
 export const updateSession = async (req, res) => {
   try {
     const sessionId = req.params.id;
-    const { session_date, start_time, duration_min, intensity, type, weather, sport_type, notes } = req.body;
+    const patch = { ...req.body };
+    delete patch.userId;
 
-    const updatedSession = await TrainingSession.updateSession(sessionId, {
-      sessionDate: session_date,
-      startTime: start_time,
-      durationMin: duration_min,
-      intensity,
-      type,
-      weather,
-      sport_type,
-      notes,
-    });
+    const validationError = validateTrainingFields(patch, { requireAll: false });
+    if (validationError) {
+      return sendError(res, 400, validationError);
+    }
+
+    const updatedSession = await TrainingSession.updateSession(sessionId, patch);
+    let recommendationsRegenerating = false;
+
+    if (shouldRegenerateRecommendations(patch)) {
+      recommendationsRegenerating = true;
+      await Recommendation.deleteBySession(sessionId);
+      const userId = req.user.id;
+      TrainingRecommendationService.generateTrainingRecommendations(userId, sessionId, {
+        type: updatedSession.type,
+        intensity: updatedSession.intensity,
+        durationMin: updatedSession.duration_min,
+        weather: updatedSession.weather,
+        sport_type: updatedSession.sport_type,
+        notes: updatedSession.notes,
+      }).catch((err) => console.error('Error regenerando recomendaciones:', err));
+    }
 
     return sendSuccess(res, 200, {
       data: updatedSession,
+      recommendationsRegenerating,
       message: 'Sesión de entrenamiento actualizada correctamente.',
     });
   } catch (error) {
     console.error('Error updating training session:', error);
+    if (error.statusCode === 404) {
+      return sendError(res, 404, 'Sesión no encontrada');
+    }
     return sendError(res, 500, 'Error al actualizar la sesión de entrenamiento', error);
   }
 };

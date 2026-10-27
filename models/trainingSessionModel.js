@@ -35,8 +35,13 @@ class TrainingSession extends BaseModel {
   // Función auxiliar para formatear la fecha al formato YYYY-MM-DD
   static formatDate(dateString) {
     if (!dateString) return null;
+    const raw = String(dateString).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return raw;
+    }
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0]; // Devuelve solo la parte de la fecha (YYYY-MM-DD)
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString().split('T')[0];
   }
 
   // Función para validar y mapear los valores de intensidad
@@ -88,19 +93,84 @@ class TrainingSession extends BaseModel {
     return this.findById(result.insertId);
   }
 
-  static async updateSession(sessionId, { sessionDate, startTime, durationMin, intensity, type, weather, sport_type, notes }) {
-    const formattedDate = this.formatDate(sessionDate);
-    const mappedIntensity = this.mapIntensity(intensity);
-    const mappedWeather = this.mapWeather(weather);
-    const mappedSportType = this.mapSportType(sport_type);
-    
+  static async updateSession(sessionId, patch = {}) {
+    const current = await this.findById(sessionId);
+    if (!current) {
+      const err = new Error('Sesión no encontrada');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const has = (key) => Object.prototype.hasOwnProperty.call(patch, key);
+
+    const next = {
+      session_date: has('sessionDate') || has('session_date')
+        ? this.formatDate(patch.sessionDate ?? patch.session_date)
+        : current.session_date,
+      start_time: has('startTime') || has('start_time')
+        ? patch.startTime ?? patch.start_time
+        : current.start_time,
+      duration_min: has('durationMin') || has('duration_min')
+        ? patch.durationMin ?? patch.duration_min
+        : current.duration_min,
+      intensity: has('intensity')
+        ? this.mapIntensity(patch.intensity)
+        : current.intensity,
+      type: has('type') ? patch.type : current.type,
+      weather: has('weather')
+        ? this.mapWeather(patch.weather)
+        : current.weather,
+      sport_type: has('sport_type')
+        ? this.mapSportType(patch.sport_type)
+        : current.sport_type,
+      notes: has('notes') ? patch.notes : current.notes,
+    };
+
+    const sets = [];
+    const values = [];
+    if (has('sessionDate') || has('session_date')) {
+      sets.push('session_date = ?');
+      values.push(next.session_date);
+    }
+    if (has('startTime') || has('start_time')) {
+      sets.push('start_time = ?');
+      values.push(next.start_time);
+    }
+    if (has('durationMin') || has('duration_min')) {
+      sets.push('duration_min = ?');
+      values.push(next.duration_min);
+    }
+    if (has('intensity')) {
+      sets.push('intensity = ?');
+      values.push(next.intensity);
+    }
+    if (has('type')) {
+      sets.push('type = ?');
+      values.push(next.type);
+    }
+    if (has('weather')) {
+      sets.push('weather = ?');
+      values.push(next.weather);
+    }
+    if (has('sport_type')) {
+      sets.push('sport_type = ?');
+      values.push(next.sport_type);
+    }
+    if (has('notes')) {
+      sets.push('notes = ?');
+      values.push(next.notes);
+    }
+
+    if (sets.length === 0) {
+      return current;
+    }
+
+    values.push(sessionId);
     await this.pool.query(
-      `UPDATE ${this.tableName} 
-       SET session_date = ?, start_time = ?, duration_min = ?, intensity = ?, type = ?, weather = ?, sport_type = ?, notes = ?
-       WHERE session_id = ?`,
-      [formattedDate, startTime, durationMin, mappedIntensity, type, mappedWeather, mappedSportType, notes, sessionId]
+      `UPDATE ${this.tableName} SET ${sets.join(', ')} WHERE session_id = ?`,
+      values
     );
-    
+
     return this.findById(sessionId);
   }
 

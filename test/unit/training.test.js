@@ -5,13 +5,22 @@ vi.mock('../../models/trainingSessionModel.js', () => ({
     findById: vi.fn(),
     findByUserId: vi.fn(),
     createSession: vi.fn(),
+    updateSession: vi.fn(),
     deleteSession: vi.fn(),
+    formatDate: vi.fn((d) => d),
+  },
+}));
+
+vi.mock('../../models/recommendationModel.js', () => ({
+  default: {
+    deleteBySession: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
 import TrainingSession from '../../models/trainingSessionModel.js';
 import { requireTrainingSessionOwner } from '../../middleware/ownershipMiddleware.js';
-import { createSession, deleteSession } from '../../controllers/trainingController.js';
+import { createSession, deleteSession, updateSession } from '../../controllers/trainingController.js';
+import Recommendation from '../../models/recommendationModel.js';
 
 vi.mock('../../services/trainingRecommendationService.js', () => ({
   default: {
@@ -68,6 +77,28 @@ describe('Sesiones de entrenamiento - unitarias', () => {
     TrainingSession.findByUserId.mockResolvedValue([{ session_id: 1 }]);
     const rows = await TrainingSession.findByUserId(5);
     expect(rows).toHaveLength(1);
+  });
+
+  it('actualización parcial puede regenerar recomendaciones', async () => {
+    TrainingSession.updateSession.mockResolvedValue({
+      session_id: 3,
+      duration_min: 60,
+      type: 'cardio',
+      intensity: 'medio',
+      weather: 'moderado',
+      sport_type: '10K',
+      notes: '',
+    });
+    const req = {
+      params: { id: '3' },
+      user: { id: 5 },
+      body: { duration_min: 60 },
+    };
+    const res = mockRes();
+    await updateSession(req, res);
+    expect(TrainingSession.updateSession).toHaveBeenCalledWith('3', { duration_min: 60 });
+    expect(Recommendation.deleteBySession).toHaveBeenCalledWith('3');
+    expect(res.status).toHaveBeenCalledWith(200);
   });
 
   it('eliminación de sesión', async () => {
