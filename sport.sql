@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 18-12-2025 a las 15:18:33
+-- Tiempo de generación: 13-11-2026 a las 15:58:05
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -93,7 +93,12 @@ INSERT INTO `notification_preferences` (`user_id`, `consumption_reminders`, `tra
 (8, 1, 1, '09:00:00', '2025-11-23 00:39:29'),
 (9, 1, 1, '09:00:00', '2025-11-23 00:42:02'),
 (10, 1, 1, '09:00:00', '2025-11-23 00:45:24'),
-(11, 1, 1, '09:00:00', '2025-11-23 00:47:40');
+(11, 1, 1, '09:00:00', '2025-11-23 00:47:40'),
+(12, 1, 1, '09:00:00', '2026-03-18 13:40:11'),
+(13, 1, 1, '09:00:00', '2026-03-18 13:42:13'),
+(14, 1, 1, '09:00:00', '2026-03-24 14:48:48'),
+(17, 1, 1, '09:00:00', '2026-04-15 14:44:28'),
+(18, 1, 1, '09:00:00', '2026-06-22 14:45:36');
 
 -- --------------------------------------------------------
 
@@ -824,7 +829,7 @@ INSERT INTO `product_types` (`type_id`, `category_id`, `name`, `description`) VA
 (14, 4, 'BCAA Tablets', 'Los aminoácidos son bloques fundamentales para las proteínas en el cuerpo, esenciales para el rendimiento y la recuperación muscular. Tres de los nueve aminoácidos esenciales son los aminoácidos de cadena ramificada (BCAAs): Leucina, Isoleucina y Valina. Los BCAAs pueden promover la síntesis de proteínas musculares, el proceso mediante el cual se desarrolla el músculo, y también han demostrado reducir la degradación de proteínas. Las cápsulas de BCAA proporcionan 4 g de aminoácidos de cadena ramificada en una proporción 2:1:1 de Leucina, Isoleucina y Valina. En un práctico formato de cápsulas, pueden consumirse antes, durante o después del entrenamiento, o en cualquier momento del día.'),
 (15, 4, 'Daily Multivitamins', 'Las vitaminas y minerales son esenciales para mantener la salud y el bienestar diarios, además de contribuir a muchas funciones corporales. A menudo es difícil obtener suficientes solo a través de la dieta, lo que puede llevar a un rendimiento subóptimo y mayor riesgo de enfermedades. El Daily Multivitamin está formulado para asegurar que recibas las cantidades adecuadas de las 7 vitaminas y minerales más importantes. Incluye vitaminas A, D, E, C, así como tiamina, riboflavina y niacina, combinadas en una sola tableta pequeña y fácil de consumir.'),
 (16, 2, 'IMMUNE Tablets', 'Diseñado para apoyar y mantener la función inmunológica antes, durante y después del rendimiento. En forma de tableta efervescente que se disuelve fácilmente en agua, representa una solución práctica para fortalecer tu sistema inmunológico. El producto incluye 200 mg de Vitamina C y 2.5 mg de Hierro, nutrientes conocidos por contribuir al mantenimiento de la función normal del sistema inmune durante y después del ejercicio físico intenso, además de complementar tus necesidades diarias recomendadas (RDA).'),
-(17, 1, 'BETA FUEL 80 Dual Source Energy Drink', 'Optimizada para atletas de élite, proporciona 80g de carbohidratos en una proporción 1:0.8, mejorando el rendimiento, la eficiencia energética y reduciendo molestias gastrointestinales. Ideal para deportes de resistencia, ofrece una solución isotónica conveniente que ayuda a mantener un alto nivel de desempeño durante actividades prolongadas.'),
+(17, 1, 'ETA FUEL 80 Dual Source Energy Drink', 'Optimizada para atletas de élite, proporciona 80g de carbohidratos en una proporción 1:0.8, mejorando el rendimiento, la eficiencia energética y reduciendo molestias gastrointestinales. Ideal para deportes de resistencia, ofrece una solución isotónica conveniente que ayuda a mantener un alto nivel de desempeño durante actividades prolongadas.'),
 (18, 1, 'BETA FUEL ENERGY CHEWS', 'Ofrece un combustible científico superior en forma de gomitas fáciles y satisfactorias de consumir. Con 46 gramos de carbohidratos rápidos, estas gomitas son parte de una gama líder de soluciones energéticas que incluye bebidas y geles. Son versátiles, ya que se pueden comer como una barra o separar en porciones individuales (cada una con aproximadamente 7g de carbohidratos). Para mantener un rendimiento óptimo, se recomienda consumir 1-3 barras de chews por hora, ajustándose a una ingesta objetivo de 80g-120g de carbohidratos durante el esfuerzo.');
 
 -- --------------------------------------------------------
@@ -893,7 +898,34 @@ INSERT INTO `recommendations` (`recommendation_id`, `user_id`, `session_id`, `pr
 (92, 6, NULL, 11, '2025-11-29 01:53:49', '', 'La estrategia de suplementación se enfoca en el objetivo principal del usuario de resistencia. Se recomiendan productos de energía para antes y durante el entrenamiento para asegurar un suministro adecuado de carbohidratos. Para la fase posterior al entre', NULL, NULL, NULL, NULL),
 (93, 6, 31, 4, '2025-11-29 01:56:08', '', NULL, 'antes', 'Consumir 30 minutos antes del inicio del entrenamiento para asegurar un buen nivel de energía.', '1 gel', 30),
 (94, 6, 31, 17, '2025-11-29 01:56:08', '', NULL, 'durante', 'Mezclar con agua según las indicaciones y consumir durante el entrenamiento para mantener niveles de energía óptimos. Ajustar la cantidad según la duración e intensidad del ejercicio.', '1 porción (80-120g de carbohidratos)', NULL),
-(95, 6, 31, 11, '2025-11-29 01:56:08', '', NULL, 'despues', 'Consumir dentro de los 30 minutos posteriores a finalizar el entrenamiento para maximizar la recuperación muscular y la reposición de glucógeno.', '1 porción', 30);
+(95, 6, 31, 11, '2025-11-29 01:56:08', '', NULL, 'despues', 'Consumir dentro de los 30 minutos posteriores a finalizar el entrenamiento para maximizar la recuperación muscular y la reposición de glucógeno.', '1 porción', 30),
+(96, 12, NULL, 1, '2026-03-18 02:00:06', '', 'La estrategia de suplementación se enfoca en el objetivo principal del usuario de ganar músculo, proporcionando energía pre-entrenamiento, soporte energético durante la sesión y una recuperación optimizada post-entrenamiento. Se han seleccionado productos', NULL, NULL, NULL, NULL),
+(97, 12, NULL, 12, '2026-03-18 02:00:06', '', 'La estrategia de suplementación se enfoca en el objetivo principal del usuario de ganar músculo, proporcionando energía pre-entrenamiento, soporte energético durante la sesión y una recuperación optimizada post-entrenamiento. Se han seleccionado productos', NULL, NULL, NULL, NULL),
+(98, 12, NULL, 31, '2026-03-18 02:00:06', '', 'La estrategia de suplementación se enfoca en el objetivo principal del usuario de ganar músculo, proporcionando energía pre-entrenamiento, soporte energético durante la sesión y una recuperación optimizada post-entrenamiento. Se han seleccionado productos', NULL, NULL, NULL, NULL),
+(99, 13, 32, 1, '2026-03-18 13:42:17', '', NULL, 'antes', 'Consumir 30 minutos antes de comenzar la actividad para asegurar la disponibilidad de energía.', '1 gel', 30),
+(100, 13, 32, 3, '2026-03-18 13:42:17', '', NULL, 'durante', 'Consumir durante el entrenamiento cada 45-60 minutos, especialmente si se anticipa una duración moderada a larga o si las condiciones son cálidas.', '1 gel', NULL),
+(101, 13, 32, 11, '2026-03-18 13:42:17', '', NULL, 'despues', 'Consumir dentro de los 30 minutos posteriores a la finalización del entrenamiento para optimizar la recuperación.', '1 porción', 30),
+(102, 14, 33, 7, '2026-03-24 14:48:52', '', NULL, 'antes', 'Consumir 30 minutos antes de iniciar el entrenamiento para asegurar una disponibilidad energética óptima.', '1 barra', 30),
+(103, 14, 33, 17, '2026-03-24 14:48:52', '', NULL, 'durante', 'Mezclar el polvo con agua según las indicaciones del producto y consumir durante la actividad, ajustando la cantidad para alcanzar el objetivo de 80-120g de carbohidratos por hora.', '80-120g de carbohidratos por hora', NULL),
+(104, 14, 33, 3, '2026-03-24 14:48:52', '', NULL, 'despues', 'Consumir dentro de los 30 minutos posteriores al final del entrenamiento para facilitar la recuperación.', '1 gel', 30),
+(105, 17, 34, 7, '2026-04-15 14:47:52', '', NULL, 'antes', 'Consumir aproximadamente 20 minutos antes del inicio del entrenamiento. Asegurarse de que sea bien tolerada digestivamente.', '1 barra', 20),
+(106, 17, 34, 17, '2026-04-15 14:47:52', '', NULL, 'durante', 'Mezclar el polvo con agua según las indicaciones del producto. Consumir gradualmente durante el entrenamiento para mantener una ingesta de 80-120g de carbohidratos por hora, adaptando la cantidad a la duración e intensidad.', '1 porción (mezclado según instrucciones)', NULL),
+(107, 17, 34, 3, '2026-04-15 14:47:52', '', NULL, 'despues', 'Consumir dentro de los 30 minutos posteriores a finalizar el entrenamiento para optimizar la recuperación de carbohidratos y electrolitos.', '1 gel', 30),
+(108, 18, 35, 14, '2026-06-22 14:51:42', '', NULL, 'diario', 'Seguir indicaciones del empaque', '1 porción', NULL),
+(109, 18, 35, 45, '2026-06-22 14:51:42', '', NULL, 'diario', 'Seguir indicaciones del empaque', '1 porción', NULL),
+(110, 18, 35, 12, '2026-06-22 14:51:42', '', NULL, 'despues', 'Consumir dentro de los 30 minutos post-entrenamiento para mejor absorción', '1 porción (mezclar con 250ml agua)', 30),
+(111, 6, 36, 17, '2026-06-23 14:21:43', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (80.00g). Ideal para preparar tu cuerpo antes del esfuerzo.', 'antes', 'Consumir 30 minutos antes para energía sostenida', '1 barra o porción', 30),
+(112, 6, 36, 18, '2026-06-23 14:21:43', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (74.00g).', 'durante', '[interval_minutes=30] Seguir indicaciones del empaque', '1 porción', NULL),
+(113, 6, 36, 4, '2026-06-23 14:21:43', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (40.00g).', 'despues', 'Seguir indicaciones del empaque', '1 porción', 30),
+(114, 6, 36, 25, '2026-06-23 14:21:43', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (40.00g). Complementa tu nutrición diaria.', 'diario', 'Consumir a la misma hora cada día, preferiblemente con el desayuno', '1 porción diaria', NULL),
+(115, 6, 37, 17, '2026-06-23 14:57:03', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (80.00g). Ideal para preparar tu cuerpo antes del esfuerzo.', 'antes', 'Consumir 30 minutos antes para energía sostenida', '1 barra o porción', 30),
+(116, 6, 37, 18, '2026-06-23 14:57:03', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (74.00g).', 'durante', '[interval_minutes=30] Seguir indicaciones del empaque', '1 porción', NULL),
+(117, 6, 37, 4, '2026-06-23 14:57:03', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (40.00g).', 'despues', 'Seguir indicaciones del empaque', '1 porción', 30),
+(118, 6, 37, 25, '2026-06-23 14:57:03', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (40.00g). Complementa tu nutrición diaria.', 'diario', 'Consumir a la misma hora cada día, preferiblemente con el desayuno', '1 porción diaria', NULL),
+(119, 6, 38, 17, '2026-06-23 15:07:27', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (80.00g). Ideal para preparar tu cuerpo antes del esfuerzo.', 'antes', 'Consumir 30 minutos antes para energía sostenida', '1 barra o porción', 30),
+(120, 6, 38, 18, '2026-06-23 15:07:27', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (74.00g).', 'durante', '[interval_minutes=30] Seguir indicaciones del empaque', '1 porción', NULL),
+(121, 6, 38, 4, '2026-06-23 15:07:27', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (40.00g).', 'despues', 'Seguir indicaciones del empaque', '1 porción', 30),
+(122, 6, 38, 25, '2026-06-23 15:07:27', NULL, 'Este producto es adecuado para tu perfil y tu objetivo de resistencia. Buena fuente de carbohidratos (40.00g). Complementa tu nutrición diaria.', 'diario', 'Consumir a la misma hora cada día, preferiblemente con el desayuno', '1 porción diaria', NULL);
 
 -- --------------------------------------------------------
 
@@ -926,7 +958,14 @@ INSERT INTO `training_sessions` (`session_id`, `user_id`, `session_date`, `start
 (28, 11, '2025-11-22', '20:19:00', 200, 'medio', 'cardio', 'calido', 'ciclismo de ruta', ''),
 (29, 11, '2025-11-22', '20:23:00', 300, 'alto', 'resistencia', 'calido', 'ciclismo de montaña', ''),
 (30, 6, '2025-11-28', '21:06:00', 400, 'alto', 'resistencia', 'calido', 'ciclismo de montaña', ''),
-(31, 6, '2025-11-28', '21:30:00', 500, 'medio', 'resistencia', 'calido', 'ciclismo de ruta', '');
+(31, 6, '2025-11-28', '21:30:00', 500, 'medio', 'resistencia', 'calido', 'ciclismo de ruta', ''),
+(32, 13, '2026-03-18', '18:00:00', 90, 'medio', 'cardio', 'fresco', 'ciclismo de montaña', ''),
+(33, 14, '2026-03-24', '15:00:00', 200, 'medio', 'resistencia', 'moderado', 'ciclismo de montaña', ''),
+(34, 17, '2026-04-15', '18:00:00', 200, 'alto', 'resistencia', 'calido', 'ciclismo de montaña', ''),
+(35, 18, '2026-06-22', '17:00:00', 160, 'alto', 'resistencia', 'fresco', 'ciclismo de montaña', ''),
+(36, 6, '2026-06-23', '18:00:00', 90, 'medio', 'resistencia', 'fresco', 'trail', ''),
+(37, 6, '2026-06-23', '18:00:00', 100, 'medio', 'resistencia', 'fresco', 'trail', ''),
+(38, 6, '2026-06-23', '18:00:00', 180, 'medio', 'resistencia', 'fresco', 'trail', '');
 
 -- --------------------------------------------------------
 
@@ -957,7 +996,14 @@ INSERT INTO `users` (`user_id`, `username`, `email`, `password`, `created_at`) V
 (8, 'test', 'test@test.com', '$2b$10$uQpqc8W1hNQRLUrCwhHESeExCfXtLQqhyvFQzy2G4RdLalaLKR.gm', '2025-11-23 00:35:54'),
 (9, 'test2', 'test2@test.com', '$2b$10$HZY6fPzskvyfqN3JecBNJOP1SzbPOEy/.cJLyH4ovPnvD3RLfVM52', '2025-11-23 00:40:20'),
 (10, 'Juan', 'j@gamal.com', '$2b$10$DA02Z.jxKw7nmS6EfddlL.id3vsoJ7OVddirURRuN5Tfefk6gVDX2', '2025-11-23 00:42:29'),
-(11, 'José', 'jose@gmail.com', '$2b$10$liwonws4Kkq3QMVlXv6GYuypwmE9X0NAEZRJ4TcXxAnRq9smRg0/e', '2025-11-23 00:46:40');
+(11, 'José', 'jose@gmail.com', '$2b$10$liwonws4Kkq3QMVlXv6GYuypwmE9X0NAEZRJ4TcXxAnRq9smRg0/e', '2025-11-23 00:46:40'),
+(12, 'Fernanda Perez Arpi', 'fer_p@gmail.com', '$2b$10$Z/yPJqcrailAvgBmobu70udVXh3hDin6a02TmnZOcHignkcnLYaX.', '2026-03-18 01:12:12'),
+(13, 'Fernando Pérez I', 'fernan_perez@test.com', '$2b$10$k/Qitq9Qptr3na9xmVRdeuMDCgRwRnSdpjfuGOOrWnF4VydbLcVHe', '2026-03-18 13:41:08'),
+(14, 'Juan Perez ', 'juanperez@gmail.com', '$2b$10$5Ke87Go8/WlapbNKtBl6AekbA3Cs/1MB95GkfRwixiljDSojs5mZC', '2026-03-24 14:47:10'),
+(15, 'Juanito prueba', 'jp@gmail.com', '$2b$10$rS17HAVW4ycjJQKNeIvigOf6ZS/NqMlolnAt3IsgAT/dubzCVOl56', '2026-03-31 14:31:57'),
+(16, 'wilsonp', 'wilson@gmail.com', '$2b$10$zWsxqt4tf22t4LSWsN.2zOniHUg7zS39dgPQpjOeKJZLzW0ZqYjny', '2026-03-31 14:42:49'),
+(17, 'samuelpa', 'samuel@aicompass.com', '$2b$10$SB50ccIzJnHKvP6sDJPuse5Vq6fsojWHS1X3CRkaE.eptJyZL23mS', '2026-04-15 14:43:40'),
+(18, 'Gerard', 'gavila@test.com', '$2b$10$LfYwULUq1.qb/fwf5OE/WeJmZNdF80Ry8dubqQVlb8aGw/qephPiG', '2026-06-22 14:45:00');
 
 -- --------------------------------------------------------
 
@@ -985,7 +1031,12 @@ INSERT INTO `user_product_feedback` (`feedback_id`, `user_id`, `product_id`, `fe
 (3, 6, 12, 'positivo', NULL, '2025-11-02 01:51:55', '2025-11-15 02:00:21'),
 (16, 6, 7, 'positivo', NULL, '2025-11-15 02:04:36', '2025-11-16 20:31:26'),
 (19, 6, 5, 'negativo', NULL, '2025-11-15 02:05:10', NULL),
-(22, 6, 8, 'negativo', NULL, '2025-11-23 00:27:37', NULL);
+(22, 6, 8, 'negativo', NULL, '2025-11-23 00:27:37', NULL),
+(28, 17, 3, 'positivo', NULL, '2026-04-15 14:49:06', NULL),
+(29, 17, 17, 'positivo', NULL, '2026-04-15 14:49:10', NULL),
+(30, 17, 7, 'negativo', NULL, '2026-04-15 14:49:12', NULL),
+(31, 18, 14, 'positivo', NULL, '2026-06-22 14:56:48', NULL),
+(32, 18, 45, 'negativo', NULL, '2026-06-22 14:57:07', NULL);
 
 -- --------------------------------------------------------
 
@@ -1001,7 +1052,7 @@ CREATE TABLE `user_profiles` (
   `height` decimal(5,2) DEFAULT NULL,
   `gender` enum('hombre','mujer','otro','prefiero no decir') DEFAULT NULL,
   `activity_level` enum('sedentario','moderado','activo','muy activo') DEFAULT 'moderado',
-  `training_frequency` enum('1-2','3-4','5+','ocasional') DEFAULT NULL,
+  `training_frequency` enum('1-2','3-4','5+','ocacional') DEFAULT NULL,
   `primary_goal` enum('mejor rendimiento','perder peso','ganar musculo','resistencia','recuperacion','por salud') DEFAULT NULL,
   `sweat_level` enum('bajo','medio','alto') DEFAULT NULL,
   `caffeine_tolerance` enum('no','bajo','medio','alto') DEFAULT NULL,
@@ -1014,12 +1065,18 @@ CREATE TABLE `user_profiles` (
 
 INSERT INTO `user_profiles` (`profile_id`, `user_id`, `age`, `weight`, `height`, `gender`, `activity_level`, `training_frequency`, `primary_goal`, `sweat_level`, `caffeine_tolerance`, `dietary_restrictions`) VALUES
 (2, 5, 47, 100.00, 185.00, 'hombre', 'moderado', '3-4', 'mejor rendimiento', 'medio', 'medio', 'vegetariano'),
-(3, 6, 31, 74.00, 180.00, 'hombre', 'activo', '3-4', 'resistencia', 'medio', 'medio', 'libre de lactosa'),
+(3, 6, 33, 74.00, 180.00, 'hombre', 'activo', '3-4', 'resistencia', 'medio', 'medio', 'libre de lactosa'),
 (4, 7, 30, 76.00, 180.00, 'hombre', 'activo', '5+', 'mejor rendimiento', 'medio', 'medio', 'no'),
 (5, 8, 18, 65.00, 161.00, 'hombre', 'activo', '3-4', 'perder peso', 'medio', 'bajo', 'no'),
 (6, 9, 27, 81.00, 158.00, 'mujer', 'activo', '3-4', 'mejor rendimiento', 'medio', 'medio', 'no'),
 (7, 10, 29, 59.00, 169.00, 'hombre', 'activo', '3-4', 'por salud', 'medio', 'medio', 'no'),
-(8, 11, 30, 60.00, 149.00, 'hombre', 'activo', '3-4', 'ganar musculo', 'medio', 'medio', 'no');
+(8, 11, 30, 60.00, 149.00, 'hombre', 'activo', '3-4', 'ganar musculo', 'medio', 'medio', 'no'),
+(9, 12, 25, 70.00, 170.00, 'mujer', 'moderado', '3-4', 'ganar musculo', 'medio', 'medio', 'no'),
+(10, 13, 60, 70.00, 170.00, 'hombre', 'moderado', '3-4', 'por salud', 'medio', 'medio', 'no'),
+(11, 14, 28, 65.00, 175.00, 'hombre', 'activo', '3-4', 'resistencia', 'medio', 'medio', 'no'),
+(12, 16, 25, 70.00, 170.00, 'hombre', 'moderado', '3-4', 'ganar musculo', 'medio', 'medio', 'no'),
+(13, 17, 25, 70.00, 170.00, 'hombre', 'moderado', '3-4', 'mejor rendimiento', 'medio', 'medio', 'no'),
+(14, 18, 25, 70.00, 170.00, 'hombre', 'moderado', '3-4', 'ganar musculo', 'medio', 'medio', 'no');
 
 --
 -- Índices para tablas volcadas
@@ -1099,7 +1156,9 @@ ALTER TABLE `recommendations`
   ADD PRIMARY KEY (`recommendation_id`),
   ADD KEY `user_id` (`user_id`),
   ADD KEY `session_id` (`session_id`),
-  ADD KEY `product_id` (`product_id`);
+  ADD KEY `product_id` (`product_id`),
+  ADD KEY `idx_rec_user_date` (`user_id`,`recommended_at`),
+  ADD KEY `idx_rec_user_product` (`user_id`,`product_id`);
 
 --
 -- Indices de la tabla `training_sessions`
@@ -1182,31 +1241,31 @@ ALTER TABLE `product_types`
 -- AUTO_INCREMENT de la tabla `recommendations`
 --
 ALTER TABLE `recommendations`
-  MODIFY `recommendation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=96;
+  MODIFY `recommendation_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=123;
 
 --
 -- AUTO_INCREMENT de la tabla `training_sessions`
 --
 ALTER TABLE `training_sessions`
-  MODIFY `session_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `session_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT de la tabla `user_product_feedback`
 --
 ALTER TABLE `user_product_feedback`
-  MODIFY `feedback_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
+  MODIFY `feedback_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT de la tabla `user_profiles`
 --
 ALTER TABLE `user_profiles`
-  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `profile_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Restricciones para tablas volcadas

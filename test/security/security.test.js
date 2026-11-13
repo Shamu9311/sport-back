@@ -96,8 +96,9 @@ describe('Seguridad - controles automatizados', () => {
     const usersAfter = await countRows('users');
     expect(usersAfter).toBeGreaterThanOrEqual(usersBefore);
 
-    const [tables] = await pool.query("SHOW TABLES LIKE 'users'");
-    expect(tables.length).toBe(1);
+    // PostgreSQL: to_regclass reemplaza a SHOW TABLES LIKE de MariaDB
+    const { rows } = await pool.query("SELECT to_regclass('public.users') AS t");
+    expect(rows[0].t).toBe('users');
   });
 
   it('cabeceras Helmet presentes', async () => {

@@ -10,7 +10,7 @@ export const getRecommendations = async (req, res) => {
 
     try {
         // 1. Obtener perfil de usuario
-        const [profileRows] = await pool.query('SELECT * FROM user_profiles WHERE user_id = ?', [userId]);
+        const { rows: profileRows } = await pool.query('SELECT * FROM user_profiles WHERE user_id = $1', [userId]);
         if (profileRows.length === 0) {
             return sendError(res, 404, 'Completa tu perfil antes de obtener recomendaciones.');
         }
@@ -54,13 +54,12 @@ export const getRecommendations = async (req, res) => {
             // Reutilizamos la query de candidateProducts pero solo para los IDs recomendados
             // (o una query más simple si ya tienes los datos que necesitas del retriever,
             //  pero el LLM podría necesitar menos datos que los que quieres mostrar al final)
-            const placeholders = recommendedProductIds.map(() => '?').join(',');
             const productDetailsQuery = `
                 SELECT
                     p.product_id, p.name AS product_name, p.description AS product_description, p.image_url, p.usage_recommendation,
                     pt.name AS type_name, pc.name AS category_name, pc.usage_context,
-                    GROUP_CONCAT(DISTINCT pa.name) AS attributes,
-                    GROUP_CONCAT(DISTINCT f.name) AS flavors,
+                    string_agg(DISTINCT pa.name, ',') AS attributes,
+                    string_agg(DISTINCT f.name, ',') AS flavors,
                     MAX(pn.serving_size) AS serving_size, MAX(pn.energy_kcal) AS energy_kcal, MAX(pn.protein_g) AS protein_g, 
                     MAX(pn.carbs_g) AS carbs_g, MAX(pn.sugars_g) AS sugars_g, MAX(pn.sodium_mg) AS sodium_mg, 
                     MAX(pn.caffeine_mg) AS caffeine_mg, MAX(pn.other_components) AS other_components
@@ -72,10 +71,10 @@ export const getRecommendations = async (req, res) => {
                 LEFT JOIN product_flavors pf ON p.product_id = pf.product_id
                 LEFT JOIN flavors f ON pf.flavor_id = f.flavor_id
                 LEFT JOIN product_nutrition pn ON p.product_id = pn.product_id
-                WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
+                WHERE p.product_id = ANY($1::int[]) AND p.is_active = TRUE
                 GROUP BY p.product_id, p.name, p.description, p.image_url, p.usage_recommendation, pt.name, pc.name, pc.usage_context
             `;
-            const [detailedProductRows] = await pool.query(productDetailsQuery, recommendedProductIds);
+            const { rows: detailedProductRows } = await pool.query(productDetailsQuery, [recommendedProductIds]);
 
             // Mapear los detalles con el 'reasoning' del LLM
             finalRecommendedProducts = detailedProductRows.map(product => {
@@ -108,7 +107,7 @@ export const getRecommendations = async (req, res) => {
                         : productReasoning;
 
                     return pool.query(
-                        'INSERT INTO recommendations (user_id, session_id, product_id, recommended_at, feedback, feedback_notes) VALUES (?, NULL, ?, NOW(), NULL, ?)',
+                        'INSERT INTO recommendations (user_id, session_id, product_id, recommended_at, feedback, feedback_notes) VALUES ($1, NULL, $2, NOW(), NULL, $3)',
                         [userId, rec.product_id, feedbackNotesText]
                     );
                 } catch (error) {
@@ -159,23 +158,28 @@ export const postRecommendationFeedback = async (req, res) => {
 
     try {
         if (recommendation_id) {
-            const [result] = await pool.query(
-                'UPDATE recommendations SET feedback = ?, feedback_notes = ? WHERE recommendation_id = ? AND user_id = ?',
+            const result = await pool.query(
+                'UPDATE recommendations SET feedback = $1, feedback_notes = $2 WHERE recommendation_id = $3 AND user_id = $4',
                 [feedback, feedback_notes || null, recommendation_id, userId]
             );
-            if (result.affectedRows === 0) {
+            if (result.rowCount === 0) {
                 return sendError(res, 404, 'Recomendación no encontrada o no autorizada.');
             }
         } else {
             // Fallback si no hay recommendation_id, intentamos actualizar el más reciente para el producto y usuario.
             // Esto es menos preciso. Es mejor tener IDs.
-            const [result] = await pool.query(
-                `UPDATE recommendations SET feedback = ?, feedback_notes = ? 
-                 WHERE user_id = ? AND product_id = ? 
-                 ORDER BY recommended_at DESC LIMIT 1`,
+            // PostgreSQL no admite UPDATE ... ORDER BY ... LIMIT: se selecciona el id más reciente en una subconsulta.
+            const result = await pool.query(
+                `UPDATE recommendations SET feedback = $1, feedback_notes = $2
+                 WHERE recommendation_id = (
+                     SELECT recommendation_id FROM recommendations
+                     WHERE user_id = $3 AND product_id = $4
+                     ORDER BY recommended_at DESC, recommendation_id DESC
+                     LIMIT 1
+                 )`,
                 [feedback, feedback_notes || null, userId, product_id]
             );
-             if (result.affectedRows === 0) {
+             if (result.rowCount === 0) {
                 // Si no se encontró para actualizar, quizás se debería insertar una entrada de feedback aislada o un log.
                 // O simplemente devolver que no se encontró para actualizar.
                 console.warn(`No recommendation found to update feedback for user ${userId}, product ${product_id}`);
@@ -199,16 +203,19 @@ export const getSavedRecommendations = async (req, res) => {
 
     try {
         // Obtener las recomendaciones guardadas con detalles del producto
-        const [recommendations] = await pool.query(`
+        const { rows: recommendations } = await pool.query(`
             SELECT r.*, p.name as product_name, p.description as product_description, p.image_url,
-                   pt.name as type_name, pc.name as category_name
+                   pt.name as type_name, pc.name as category_name,
+                   -- Contexto de la sesión: la app muestra "para qué sesión" y solo pide calificar después de entrenar
+                   ts.session_date, ts.start_time, ts.duration_min, ts.sport_type AS session_sport_type
             FROM recommendations r
             JOIN products p ON r.product_id = p.product_id
             LEFT JOIN product_types pt ON p.type_id = pt.type_id
             LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
-            WHERE r.user_id = ?
-            ORDER BY r.recommended_at DESC
-            LIMIT ? OFFSET ?
+            LEFT JOIN training_sessions ts ON ts.session_id = r.session_id
+            WHERE r.user_id = $1
+            ORDER BY r.recommended_at DESC, r.recommendation_id
+            LIMIT $2 OFFSET $3
         `, [userId, limit, offset]);
 
         if (recommendations.length === 0) {

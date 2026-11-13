@@ -5,29 +5,53 @@ class User extends BaseModel {
   static tableName = 'users';
   static primaryKey = 'user_id'; // Especificar que la clave primaria es user_id, no id
 
+  // MariaDB (utf8mb4_general_ci) comparaba sin distinguir mayúsculas; se conserva con lower().
   static async findByEmail(email) {
-    const [rows] = await this.pool.query('SELECT * FROM users WHERE email = ?', [email]);
+    const { rows } = await this.pool.query(
+      'SELECT * FROM users WHERE lower(email) = lower($1) ORDER BY user_id LIMIT 1',
+      [email]
+    );
     return rows[0] || null;
   }
 
   static async findByUsername(username) {
-    const [rows] = await this.pool.query('SELECT * FROM users WHERE username = ?', [username]);
+    const { rows } = await this.pool.query(
+      'SELECT * FROM users WHERE lower(username) = lower($1) ORDER BY user_id LIMIT 1',
+      [username]
+    );
     return rows[0] || null;
   }
 
   static async create({ username, email, password }) {
-    const [result] = await this.pool.query(
-      'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+    const { rows } = await this.pool.query(
+      'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING user_id',
       [username, email, password]
     );
-    return this.findById(result.insertId);
+    return this.findById(rows[0].user_id);
+  }
+
+  // Valores permitidos por los CHECK de user_profiles. MariaDB en modo no estricto guardaba ''
+  // ante un valor fuera del ENUM; PostgreSQL lo rechaza, así que un valor desconocido se guarda como NULL.
+  static profileEnumValues = {
+    activity_level: ['sedentario', 'moderado', 'activo', 'muy activo'],
+    training_frequency: ['1-2', '3-4', '5+', 'ocasional'],
+    primary_goal: ['mejor rendimiento', 'perder peso', 'ganar musculo', 'resistencia', 'recuperacion', 'por salud'],
+    sweat_level: ['bajo', 'medio', 'alto'],
+    caffeine_tolerance: ['no', 'bajo', 'medio', 'alto'],
+  };
+
+  static normalizeProfileEnum(field, value) {
+    if (value === undefined || value === null || value === '') return null;
+    const allowed = this.profileEnumValues[field];
+    if (field === 'training_frequency' && value === 'ocacional') return 'ocasional';
+    return allowed.includes(value) ? value : null;
   }
 
   static async createUserProfile(userId, profileData) {
     try {
       // Verificar si ya existe un perfil para este usuario
-      const [existingProfile] = await this.pool.query(
-        'SELECT * FROM user_profiles WHERE user_id = ?',
+      const { rows: existingProfile } = await this.pool.query(
+        'SELECT * FROM user_profiles WHERE user_id = $1',
         [userId]
       );
       
@@ -134,21 +158,28 @@ class User extends BaseModel {
           dietary_restrictions = 'no';
         }
       }
+
+      activity_level = this.normalizeProfileEnum('activity_level', activity_level);
+      training_frequency = this.normalizeProfileEnum('training_frequency', training_frequency);
+      primary_goal = this.normalizeProfileEnum('primary_goal', primary_goal);
+      sweat_level = this.normalizeProfileEnum('sweat_level', sweat_level);
+      caffeine_tolerance = this.normalizeProfileEnum('caffeine_tolerance', caffeine_tolerance);
+
       if (existingProfile && existingProfile.length > 0) {
         // Actualizar perfil existente
         await this.pool.query(
-          `UPDATE user_profiles SET 
-           age = ?, 
-           weight = ?, 
-           height = ?, 
-           gender = ?, 
-           activity_level = ?, 
-           training_frequency = ?, 
-           primary_goal = ?, 
-           sweat_level = ?, 
-           caffeine_tolerance = ?, 
-           dietary_restrictions = ? 
-           WHERE user_id = ?`,
+          `UPDATE user_profiles SET
+           age = $1,
+           weight = $2,
+           height = $3,
+           gender = $4,
+           activity_level = $5,
+           training_frequency = $6,
+           primary_goal = $7,
+           sweat_level = $8,
+           caffeine_tolerance = $9,
+           dietary_restrictions = $10
+           WHERE user_id = $11`,
           [
             age, 
             weight, 
@@ -178,7 +209,7 @@ class User extends BaseModel {
             sweat_level, 
             caffeine_tolerance, 
             dietary_restrictions
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
           [
             userId, 
             age, 
@@ -204,8 +235,8 @@ class User extends BaseModel {
 
   static async getUserById(userId) {
     try {
-      const [rows] = await pool.query(
-        'SELECT user_id, username, email, created_at FROM users WHERE user_id = ?',
+      const { rows } = await pool.query(
+        'SELECT user_id, username, email, created_at FROM users WHERE user_id = $1',
         [userId]
       );
       return rows[0];
@@ -217,8 +248,8 @@ class User extends BaseModel {
 
   static async getUserProfile(userId) {
     try {
-      const [rows] = await pool.query(
-        'SELECT * FROM user_profiles WHERE user_id = ?',
+      const { rows } = await pool.query(
+        'SELECT * FROM user_profiles WHERE user_id = $1 ORDER BY profile_id LIMIT 1',
         [userId]
       );
       return rows[0];

@@ -9,7 +9,7 @@ async function testVectorSearch() {
     console.log('🧪 Iniciando prueba de búsqueda vectorial...\n');
     
     // 1. Verificar que existen embeddings de productos
-    const [count] = await pool.query('SELECT COUNT(*) as total FROM product_embeddings');
+    const { rows: count } = await pool.query('SELECT COUNT(*)::int as total FROM product_embeddings');
     console.log(`📊 Embeddings en BD: ${count[0].total}`);
     
     if (count[0].total === 0) {
@@ -46,15 +46,14 @@ async function testVectorSearch() {
     
     // 5. Obtener detalles de los productos encontrados
     if (similarProductIds.length > 0) {
-      const placeholders = similarProductIds.map(() => '?').join(',');
-      const [products] = await pool.query(`
+      const { rows: products } = await pool.query(`
         SELECT p.product_id, p.name, pc.name as category
         FROM products p
         LEFT JOIN product_types pt ON p.type_id = pt.type_id
         LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
-        WHERE p.product_id IN (${placeholders})
-        ORDER BY FIELD(p.product_id, ${placeholders})
-      `, similarProductIds);
+        WHERE p.product_id = ANY($1::int[])
+        ORDER BY array_position($1::int[], p.product_id)
+      `, [similarProductIds]);
       
       console.log(`\n🎯 Productos más relevantes (Top ${products.length}):`);
       products.forEach((p, i) => {

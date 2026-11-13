@@ -9,12 +9,18 @@ export class BaseModel {
   static async findById(id) {
     // Usar la columna de ID específica para cada tabla
     const idColumn = this.primaryKey || 'id';
-    const [rows] = await this.pool.query(`SELECT * FROM ${this.tableName} WHERE ${idColumn} = ?`, [id]);
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.tableName} WHERE ${idColumn} = $1`,
+      [id]
+    );
     return rows[0] || null;
   }
 
   static async findAll() {
-    const [rows] = await this.pool.query(`SELECT * FROM ${this.tableName}`);
+    // PostgreSQL no garantiza orden sin ORDER BY (MariaDB devolvía por PK)
+    const { rows } = await this.pool.query(
+      `SELECT * FROM ${this.tableName} ORDER BY ${this.primaryKey || 'id'}`
+    );
     return rows;
   }
 

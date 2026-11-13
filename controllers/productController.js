@@ -29,6 +29,18 @@ function normalizeProductResponse(product) {
   };
 }
 
+/**
+ * Ids de ruta/query como entero positivo de 32 bits. MariaDB convertía '"abc"' en 0 (sin filas → 404);
+ * PostgreSQL lanza error 22P02, así que un id inválido se trata como "no encontrado".
+ */
+function parseId(value) {
+  if (value === undefined || value === null) return null;
+  const str = String(value).trim();
+  if (!/^\d+$/.test(str)) return null;
+  const n = Number(str);
+  return n > 0 && n <= 2147483647 ? n : null;
+}
+
 function normalizeProductsList(products) {
   if (!Array.isArray(products)) return products;
   return products.map(normalizeProductResponse);
@@ -53,8 +65,11 @@ class ProductController {
    */
   static async getProductsByCategory(req, res) {
     try {
-      const { categoryId } = req.params;
-      
+      const categoryId = parseId(req.params.categoryId);
+      if (categoryId === null) {
+        return sendError(res, 404, 'Categoría no encontrada');
+      }
+
       const [category, products] = await Promise.all([
         ProductCategory.findById(categoryId),
         Product.findByCategory(categoryId)
@@ -81,8 +96,11 @@ class ProductController {
    */
   static async getProductDetails(req, res) {
     try {
-      const { productId } = req.params;
-      
+      const productId = parseId(req.params.productId);
+      if (productId === null) {
+        return sendError(res, 404, 'Producto no encontrado');
+      }
+
       const product = await Product.findById(productId);
       if (!product) {
         return sendError(res, 404, 'Producto no encontrado');
@@ -100,8 +118,8 @@ class ProductController {
    */
   static async getProductNutrition(req, res) {
     try {
-      const { productId } = req.params;
-      const nutrition = await ProductNutrition.getByProduct(productId);
+      const productId = parseId(req.params.productId);
+      const nutrition = productId === null ? null : await ProductNutrition.getByProduct(productId);
       return sendSuccess(res, 200, { data: nutrition || {} });
     } catch (error) {
       console.error('Error en ProductController.getProductNutrition:', error);
@@ -114,8 +132,8 @@ class ProductController {
    */
   static async getProductFlavors(req, res) {
     try {
-      const { productId } = req.params;
-      const flavors = await Flavor.getByProduct(productId);
+      const productId = parseId(req.params.productId);
+      const flavors = productId === null ? [] : await Flavor.getByProduct(productId);
       return sendSuccess(res, 200, { data: flavors });
     } catch (error) {
       console.error('Error en ProductController.getProductFlavors:', error);
@@ -128,8 +146,8 @@ class ProductController {
    */
   static async getProductAttributes(req, res) {
     try {
-      const { productId } = req.params;
-      const attributes = await ProductAttribute.getByProduct(productId);
+      const productId = parseId(req.params.productId);
+      const attributes = productId === null ? [] : await ProductAttribute.getByProduct(productId);
       return sendSuccess(res, 200, { data: attributes });
     } catch (error) {
       console.error('Error en ProductController.getProductAttributes:', error);
@@ -142,8 +160,11 @@ class ProductController {
    */
   static async getFullProductDetails(req, res) {
     try {
-      const { productId } = req.params;
-      
+      const productId = parseId(req.params.productId);
+      if (productId === null) {
+        return sendError(res, 404, 'Producto no encontrado');
+      }
+
       const [
         product,
         nutrition,
@@ -179,7 +200,7 @@ class ProductController {
    */
   static async searchProducts(req, res) {
     try {
-      const { 
+      const {
         q = '',              // Texto de búsqueda
         category = '',       // ID de categoría
         timing = '',         // Timing de consumo: antes, durante, despues, diario
@@ -189,34 +210,41 @@ class ProductController {
       } = req.query;
 
       let query = `
-        SELECT DISTINCT p.*, 
+        SELECT DISTINCT p.*,
                pt.name as type_name,
                pc.name as category_name
         FROM products p
         LEFT JOIN product_types pt ON p.type_id = pt.type_id
         LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
       `;
-      
+
       const conditions = [];
       const params = [];
 
-      // Filtro de búsqueda por texto
+      // Placeholder posicional de PostgreSQL ($1, $2, ...)
+      const addParam = (value) => {
+        params.push(value);
+        return `$${params.length}`;
+      };
+
+      // Filtro de búsqueda por texto: ILIKE (sin mayúsculas) + unaccent (sin tildes), como hacía MariaDB general_ci
       if (q && q.trim() !== '') {
-        conditions.push('(p.name LIKE ? OR p.description LIKE ?)');
-        const searchTerm = `%${q.trim()}%`;
-        params.push(searchTerm, searchTerm);
+        const searchTerm = addParam(`%${q.trim()}%`);
+        conditions.push(
+          `(extensions.unaccent(p.name) ILIKE extensions.unaccent(${searchTerm}) OR extensions.unaccent(COALESCE(p.description, '')) ILIKE extensions.unaccent(${searchTerm}))`
+        );
       }
 
       // Filtro por categoría
       if (category && category !== '') {
-        conditions.push('pc.category_id = ?');
-        params.push(category);
+        const categoryId = parseId(category);
+        conditions.push(categoryId === null ? 'FALSE' : `pc.category_id = ${addParam(categoryId)}`);
       }
 
       // Filtro por tipo de producto
       if (type && type !== '') {
-        conditions.push('pt.type_id = ?');
-        params.push(type);
+        const typeId = parseId(type);
+        conditions.push(typeId === null ? 'FALSE' : `pt.type_id = ${addParam(typeId)}`);
       }
 
       // Filtro por timing - mapear a usage_context de product_categories
@@ -226,40 +254,40 @@ class ProductController {
           'durante': 'durante entrenamiento',
           'despues': 'post entrenamiento'
         };
-        
+
         const usageContext = timingMap[timing] || timing;
-        conditions.push('pc.usage_context = ?');
-        params.push(usageContext);
+        conditions.push(`pc.usage_context = ${addParam(usageContext)}`);
       }
 
       // Siempre filtrar productos activos
-      conditions.push('p.is_active = 1');
+      conditions.push('p.is_active = TRUE');
 
       // Construir query de conteo (sin cambios en la estructura)
       let countQuery = `
-        SELECT COUNT(DISTINCT p.product_id) as total
+        SELECT COUNT(DISTINCT p.product_id)::int as total
         FROM products p
         LEFT JOIN product_types pt ON p.type_id = pt.type_id
         LEFT JOIN product_categories pc ON pt.category_id = pc.category_id
       `;
-      
+
       // Agregar condiciones WHERE
       const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : '';
       query += whereClause;
       countQuery += whereClause;
-      
+
       // Contar total
       const countParams = params.slice();
-      const [countResult] = await Product.pool.query(countQuery, countParams);
+      const { rows: countResult } = await Product.pool.query(countQuery, countParams);
       const total = countResult[0]?.total || 0;
 
       // Ordenar por nombre y aplicar paginación
-      query += ' ORDER BY p.name ASC';
-      query += ` LIMIT ? OFFSET ?`;
-      params.push(parseInt(limit), parseInt(offset));
+      const safeLimit = Number.isFinite(parseInt(limit, 10)) ? Math.max(parseInt(limit, 10), 0) : 10;
+      const safeOffset = Number.isFinite(parseInt(offset, 10)) ? Math.max(parseInt(offset, 10), 0) : 0;
+      query += ' ORDER BY p.name ASC, p.product_id ASC';
+      query += ` LIMIT ${addParam(safeLimit)} OFFSET ${addParam(safeOffset)}`;
 
-      const [products] = await Product.pool.query(query, params);
-      
+      const { rows: products } = await Product.pool.query(query, params);
+
       return sendSuccess(res, 200, {
         data: {
           products: normalizeProductsList(products || []),

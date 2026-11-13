@@ -23,6 +23,10 @@ export async function requireTrainingSessionOwner(req, res, next) {
     if (isNaN(sessionId)) {
       return sendError(res, 400, 'ID de sesión inválido');
     }
+    // Fuera del rango de integer de PostgreSQL no puede existir (MariaDB simplemente no encontraba filas)
+    if (sessionId <= 0 || sessionId > 2147483647) {
+      return sendError(res, 404, 'Sesión no encontrada');
+    }
     const session = await TrainingSession.findById(sessionId);
     if (!session) {
       return sendError(res, 404, 'Sesión no encontrada');

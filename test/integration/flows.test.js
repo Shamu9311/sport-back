@@ -87,8 +87,46 @@ describe('Integración backend - flujos completos', () => {
     expect(trainingRes.status).toBe(201);
 
     const sessionId = trainingRes.body.data.session_id;
-    const { recommendations } = await waitForRecommendations(token, sessionId);
+    const { recommendations } = await waitForRecommendations(token, sessionId, { minCount: 4 });
     expect(recommendations).toHaveLength(4);
+  });
+
+  it('FLUJO 3b: editar entrenamiento regenera las 4 recomendaciones sin estados parciales', async () => {
+    const { user, token } = await createUserAndLogin();
+    await request(app)
+      .post(`/api/profile/${user.id}/profile`)
+      .set(authHeader(token))
+      .send(validProfilePayload());
+
+    const trainingRes = await request(app)
+      .post('/api/training')
+      .set(authHeader(token))
+      .send(validTrainingPayload(user.id));
+    const sessionId = trainingRes.body.data.session_id;
+    await waitForRecommendations(token, sessionId, { minCount: 4 });
+
+    const updateRes = await request(app)
+      .put(`/api/training/${sessionId}`)
+      .set(authHeader(token))
+      .send({ duration_min: 120, intensity: 'alta' });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.recommendationsRegenerating).toBe(true);
+
+    // Igual que el frontend (pollTrainingRecommendations): se queda con la PRIMERA respuesta no vacía.
+    // Debe traer las 4 recomendaciones, nunca un subconjunto mientras se regeneran.
+    let firstNonEmpty = null;
+    for (let attempt = 0; attempt < 100 && !firstNonEmpty; attempt += 1) {
+      const res = await request(app)
+        .get(`/api/training/${sessionId}/recommendations`)
+        .set(authHeader(token));
+      if (Array.isArray(res.body?.data) && res.body.data.length > 0) firstNonEmpty = res.body.data;
+      else await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(firstNonEmpty).not.toBeNull();
+    expect(firstNonEmpty).toHaveLength(4);
+    expect(new Set(firstNonEmpty.map((r) => r.consumption_timing))).toEqual(
+      new Set(['antes', 'durante', 'despues', 'diario'])
+    );
   });
 
   it('FLUJO 4: feedback negativo excluye producto en nueva sesión', async () => {
@@ -139,6 +177,35 @@ describe('Integración backend - flujos completos', () => {
     const fullRes = await request(app).get(`/api/products/${productId}/full`);
     expect(fullRes.status).toBe(200);
     expect(fullRes.body.data).toHaveProperty('nutrition');
+  });
+
+  it('FLUJO 5b: la búsqueda ignora tildes y mayúsculas (unaccent + ILIKE)', async () => {
+    const withAccent = await request(app).get('/api/products/search').query({ q: 'CAFEÍNA', limit: 50 });
+    const withoutAccent = await request(app).get('/api/products/search').query({ q: 'cafeina', limit: 50 });
+    expect(withAccent.status).toBe(200);
+    expect(withAccent.body.data.total).toBeGreaterThan(0);
+    expect(withAccent.body.data.total).toBe(withoutAccent.body.data.total);
+  });
+
+  it('FLUJO 6: recomendaciones guardadas incluyen el contexto de la sesión', async () => {
+    const { user, token } = await createUserAndLogin();
+    await request(app)
+      .post(`/api/profile/${user.id}/profile`)
+      .set(authHeader(token))
+      .send(validProfilePayload());
+    const trainingRes = await request(app)
+      .post('/api/training')
+      .set(authHeader(token))
+      .send(validTrainingPayload(user.id));
+    await waitForRecommendations(token, trainingRes.body.data.session_id, { minCount: 4 });
+
+    const saved = await request(app).get('/api/recommendations/saved').set(authHeader(token));
+    expect(saved.status).toBe(200);
+    const first = saved.body.data.recommendations[0];
+    expect(first).toHaveProperty('session_date');
+    expect(first).toHaveProperty('start_time');
+    expect(first).toHaveProperty('duration_min');
+    expect(first).toHaveProperty('consumption_timing');
   });
 
   it('devuelve 400, 401, 403, 404 y 409 cuando corresponde', async () => {

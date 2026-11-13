@@ -8,11 +8,11 @@ export default class TrainingRecommendationService {
       console.log(`Generando recomendaciones para usuario ${userId}, sesión ${sessionId}`);
       
       // 1. Obtener el perfil del usuario
-      const [userProfile] = await User.pool.query(
+      const { rows: userProfile } = await User.pool.query(
         `SELECT up.*, u.email, u.username 
          FROM user_profiles up
          JOIN users u ON up.user_id = u.user_id
-         WHERE up.user_id = ?`,
+         WHERE up.user_id = $1`,
         [userId]
       );
 
@@ -99,40 +99,37 @@ export default class TrainingRecommendationService {
       console.log('Respuesta del LLM:', JSON.stringify(llmResponse, null, 2));
 
       // 5. Procesar las recomendaciones
-      const recommendations = [];
-      
+      const inputs = [];
+
       if (llmResponse && llmResponse.recommendations && llmResponse.recommendations.length > 0) {
         for (const rec of llmResponse.recommendations) {
           const product = products.find(p => p.product_id === rec.product_id);
           if (product) {
-            try {
-              const instructionsBase = rec.instructions || '';
-              const consumptionInstructions = rec.interval_minutes
-                ? `[interval_minutes=${rec.interval_minutes}] ${instructionsBase}`.trim()
-                : instructionsBase || null;
+            const instructionsBase = rec.instructions || '';
+            const consumptionInstructions = rec.interval_minutes
+              ? `[interval_minutes=${rec.interval_minutes}] ${instructionsBase}`.trim()
+              : instructionsBase || null;
 
-              const recommendation = await Recommendation.createRecommendation({
-                userId,
-                sessionId,
-                productId: product.product_id,
-                reason: rec.reasoning || 'Recomendación basada en tu entrenamiento',
-                score: rec.score || Math.floor(Math.random() * 50) + 50,
-                consumption_timing: rec.consumption_timing || null,
-                consumption_instructions: consumptionInstructions,
-                recommended_quantity: rec.quantity || null,
-                timing_minutes: rec.timing_minutes || null
-              });
-              
-              if (recommendation) {
-                recommendations.push(recommendation);
-                console.log(`Recomendación creada para producto ${product.name} - Timing: ${rec.consumption_timing || 'No especificado'}`);
-              }
-            } catch (error) {
-              console.error(`Error creando recomendación para producto ${product.product_id}:`, error);
-            }
+            inputs.push({
+              userId,
+              sessionId,
+              productId: product.product_id,
+              reason: rec.reasoning || 'Recomendación basada en tu entrenamiento',
+              score: rec.score || Math.floor(Math.random() * 50) + 50,
+              consumption_timing: rec.consumption_timing || null,
+              consumption_instructions: consumptionInstructions,
+              recommended_quantity: rec.quantity || null,
+              timing_minutes: rec.timing_minutes || null
+            });
           }
         }
       }
+
+      // Se guardan todas juntas (una transacción) para que el frontend nunca vea una lista parcial
+      const recommendations = await Recommendation.createRecommendationsBatch(inputs);
+      recommendations.forEach((r) => {
+        console.log(`Recomendación creada para producto ${r.product_name} - Timing: ${r.consumption_timing || 'No especificado'}`);
+      });
 
       console.log(`Se generaron ${recommendations.length} recomendaciones exitosamente`);
       return recommendations;

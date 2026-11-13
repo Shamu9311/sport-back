@@ -9,15 +9,20 @@ const USER_DATA_TABLES = [
   'users',
 ];
 
+const ALLOWED_TABLES = new Set([...USER_DATA_TABLES, 'products', 'product_embeddings', 'product_categories']);
+
 export async function resetUserData() {
-  await pool.query('SET FOREIGN_KEY_CHECKS = 0');
-  for (const table of USER_DATA_TABLES) {
-    await pool.query(`TRUNCATE TABLE \`${table}\``);
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('resetUserData solo puede ejecutarse con NODE_ENV=test.');
   }
-  await pool.query('SET FOREIGN_KEY_CHECKS = 1');
+  // TRUNCATE ... CASCADE reemplaza a SET FOREIGN_KEY_CHECKS = 0 de MariaDB
+  await pool.query(`TRUNCATE TABLE ${USER_DATA_TABLES.join(', ')} RESTART IDENTITY CASCADE`);
 }
 
 export async function countRows(tableName) {
-  const [rows] = await pool.query(`SELECT COUNT(*) AS total FROM \`${tableName}\``);
+  if (!ALLOWED_TABLES.has(tableName)) {
+    throw new Error(`Tabla no permitida en countRows: ${tableName}`);
+  }
+  const { rows } = await pool.query(`SELECT COUNT(*)::int AS total FROM ${tableName}`);
   return rows[0].total;
 }

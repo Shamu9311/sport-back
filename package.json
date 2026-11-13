@@ -13,7 +13,14 @@
     "test:coverage": "vitest run --coverage",
     "test:db:setup": "node test/db/setupTestDb.js",
     "test:performance": "node scripts/performanceTest.js",
-    "test:performance:real": "node scripts/performanceTest.js --real"
+    "test:performance:real": "node scripts/performanceTest.js --real",
+    "test:db": "vitest run test/db",
+    "db:migrate": "node db/migrate.js",
+    "db:migrate:status": "node db/migrate.js --status",
+    "db:import:catalog": "node scripts/importCatalogFromDump.js",
+    "db:import:embeddings": "node scripts/migrateEmbeddingsFromDump.js",
+    "db:embeddings:generate": "node scripts/generateProductEmbeddings.js",
+    "db:verify": "node scripts/verifyIntegrity.js"
   },
   "keywords": [],
   "author": "",
@@ -29,8 +36,8 @@
     "express-rate-limit": "^7.5.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.14.1",
-    "openai": "^4.100.0"
+    "openai": "^4.100.0",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",

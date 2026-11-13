@@ -1,6 +1,3 @@
+npm install
 
-npm install sequelize mysql2
-
-npm install openai
-
-npm install jsonwebtoken
+Base de datos: PostgreSQL (Supabase) + pgvector. Ver db/README.md

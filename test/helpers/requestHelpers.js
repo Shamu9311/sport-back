@@ -6,7 +6,12 @@ export async function waitForRecommendations(token, sessionId, options = {}) {
   const testApp = options.app || app;
   const maxAttempts = options.maxAttempts || 30;
   const intervalMs = options.intervalMs || 200;
+  // Las recomendaciones se insertan una a una en segundo plano. Con una BD remota (Supabase)
+  // cada inserción tarda más que en MariaDB local, así que se espera a `minCount` filas o
+  // a que el número de filas deje de crecer entre dos sondeos consecutivos.
+  const minCount = options.minCount || 1;
   let lastBody = null;
+  let previousCount = -1;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const res = await request(testApp)
@@ -14,10 +19,12 @@ export async function waitForRecommendations(token, sessionId, options = {}) {
       .set(authHeader(token));
 
     lastBody = res.body;
+    const data = res.status === 200 && Array.isArray(res.body?.data) ? res.body.data : [];
 
-    if (res.status === 200 && Array.isArray(res.body?.data) && res.body.data.length > 0) {
-      return { response: res, recommendations: res.body.data };
+    if (data.length >= minCount && (options.minCount || data.length === previousCount)) {
+      return { response: res, recommendations: data };
     }
+    previousCount = data.length;
 
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }

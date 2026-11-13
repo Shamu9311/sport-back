@@ -30,9 +30,13 @@ function validateTrainingFields(body, { requireAll = false } = {}) {
   return null;
 }
 
-function shouldRegenerateRecommendations(body) {
-  const keys = ['duration_min', 'durationMin', 'intensity', 'type', 'sport_type', 'weather'];
-  return keys.some((k) => Object.prototype.hasOwnProperty.call(body, k));
+/**
+ * Regenerar solo si cambió el VALOR de un campo que influye en las recomendaciones (antes bastaba con
+ * que la clave viniera en el cuerpo: guardar sin cambios borraba y regeneraba las 4 recomendaciones).
+ */
+function shouldRegenerateRecommendations(current, patch) {
+  if (!current) return false;
+  return TrainingSession.changedRecommendationFields(current, patch).length > 0;
 }
 
 export const getUserSessions = async (req, res) => {
@@ -140,10 +144,14 @@ export const updateSession = async (req, res) => {
       return sendError(res, 400, validationError);
     }
 
+    // Estado previo (lo carga requireTrainingSessionOwner) para comparar valores reales
+    const currentSession = req.trainingSession || (await TrainingSession.findById(sessionId));
+    const regenerate = shouldRegenerateRecommendations(currentSession, patch);
+
     const updatedSession = await TrainingSession.updateSession(sessionId, patch);
     let recommendationsRegenerating = false;
 
-    if (shouldRegenerateRecommendations(patch)) {
+    if (regenerate) {
       recommendationsRegenerating = true;
       await Recommendation.deleteBySession(sessionId);
       const userId = req.user.id;

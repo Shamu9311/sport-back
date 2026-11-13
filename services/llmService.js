@@ -197,7 +197,8 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
         * usage_context "durante entrenamiento" → consumption_timing "durante"
         * usage_context "post entrenamiento" → consumption_timing "despues"
         * usage_context "diario" → consumption_timing "diario"
-      - Si para alguna fase NO hay producto con usage_context adecuado, elige el más cercano por categoría
+      - Si para alguna fase NO hay producto con usage_context adecuado, OMITE esa fase: no inventes productos
+        ni uses product_id null. Usa solo product_id que aparezcan en la lista.
       - Prioriza productos que naturalmente correspondan a cada fase:
         * ANTES: energía, pre-workout
         * DURANTE: geles, hidratación, electrolitos
@@ -229,7 +230,8 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
         "llm_overall_reasoning": "Resumen de la estrategia de suplementación para este entrenamiento."
       }
 
-      RECUERDA: Debes devolver 4 recomendaciones con consumption_timing distinto (antes, durante, despues, diario).
+      RECUERDA: Devuelve hasta 4 recomendaciones con consumption_timing distinto (antes, durante, despues, diario),
+      una por fase que tenga un producto adecuado en la lista.
       No incluyas texto fuera del JSON. Solo el JSON.
     `;
 
@@ -263,23 +265,25 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
             // Construir el prompt para Gemini (combina system y user prompts)
             const geminiPrompt = `${systemPrompt}\n\n${userMessagePrompt}`;
             
-            // Configurar el modelo de generación
-            const genParams = {
-                temperature: 0.3,
-                maxOutputTokens: 1200,
-            };
-            
-            // Hacer la llamada a la API de Gemini
-            const result = await geminiModel.generateContent(geminiPrompt, genParams);
+            // generationConfig va dentro de la petición: como segundo argumento el SDK lo trataba como
+            // RequestOptions y se ignoraban temperatura y límite. responseMimeType fuerza salida JSON.
+            const result = await geminiModel.generateContent({
+                contents: [{ role: 'user', parts: [{ text: geminiPrompt }] }],
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 2048,
+                    responseMimeType: 'application/json',
+                },
+            });
             const response = await result.response;
             llmResponseContent = response.text();
-            
+
             // Limpiar la respuesta si está envuelta en un bloque de código markdown
-            if (llmResponseContent.includes('```json')) {
+            if (llmResponseContent.includes('```')) {
                 console.log('Respuesta de Gemini incluye formato markdown, limpiando...');
                 llmResponseContent = llmResponseContent
-                    .replace(/```json\n/g, '') // Eliminar ```json inicial
-                    .replace(/```(\s*)$/g, ''); // Eliminar ``` final
+                    .replace(/```(?:json)?\s*/g, '')
+                    .trim();
             }
         }
         else {
@@ -300,19 +304,21 @@ export async function getRecommendationsFromLLM(userProfile, candidateProducts, 
             
             console.log(`Número de recomendaciones encontradas: ${parsedResponse.recommendations.length}`);
             console.log('IDs de productos recomendados:', parsedResponse.recommendations.map(rec => rec.product_id));
-            // Validar que los product_id sean números
-            parsedResponse.recommendations.forEach(rec => {
-                if (typeof rec.product_id !== 'number') {
-                    console.warn(`LLM returned a non-numeric product_id: ${rec.product_id}. Attempting to parse.`);
-                    const parsedId = parseInt(rec.product_id, 10);
-                    if (isNaN(parsedId)) {
-                        throw new Error(`LLM returned an invalid non-numeric product_id that could not be parsed: ${rec.product_id}`);
-                    }
-                    rec.product_id = parsedId;
-                }
-            });
+
+            // Antes un solo ítem inválido (p. ej. product_id null porque "no hay producto diario")
+            // descartaba TODA la respuesta. Ahora se descartan solo los ítems inválidos.
+            const { valid, discarded } = sanitizeLLMRecommendations(parsedResponse.recommendations, candidateProducts);
+            if (discarded.length > 0) {
+                console.warn(`⚠️ LLM: ${discarded.length} recomendación(es) descartada(s):`, discarded.map((d) => d.reason).join('; '));
+            }
+            if (valid.length === 0) {
+                throw new Error('LLM response had no valid recommendations.');
+            }
+
+            // Completar fases faltantes con el sistema de reglas (solo con productos de esa fase)
+            const completed = completeMissingTimings(valid, userProfile, candidateProducts);
             return {
-                recommendations: parsedResponse.recommendations,
+                recommendations: completed,
                 llmReasoning: parsedResponse.llm_overall_reasoning || "Recomendaciones generadas.",
                 promptUsed: fullPromptForLog // Guardar el prompt para auditoría/feedback
             };
@@ -341,7 +347,62 @@ function mapUsageContextToTiming(usageContext) {
     return null;
 }
 
-function getFallbackRecommendations(userProfile, candidateProducts, numRecommendations = 4) {
+const VALID_TIMINGS = ['antes', 'durante', 'despues', 'diario'];
+
+/**
+ * Valida las recomendaciones del LLM contra los candidatos enviados: descarta ítems con product_id
+ * inexistente/nulo, timing inválido, productos o fases repetidas. Devuelve válidas y descartadas.
+ */
+export function sanitizeLLMRecommendations(recommendations, candidateProducts) {
+    const candidateIds = new Set((candidateProducts || []).map((p) => Number(p.product_id)));
+    const usedProducts = new Set();
+    const usedTimings = new Set();
+    const valid = [];
+    const discarded = [];
+
+    for (const rec of recommendations || []) {
+        const productId = typeof rec?.product_id === 'number' ? rec.product_id : parseInt(rec?.product_id, 10);
+        const timing = typeof rec?.consumption_timing === 'string' ? rec.consumption_timing.toLowerCase().trim() : null;
+        let reason = null;
+        if (!Number.isInteger(productId)) reason = `product_id inválido (${rec?.product_id})`;
+        else if (!candidateIds.has(productId)) reason = `product_id ${productId} no está entre los candidatos`;
+        else if (!VALID_TIMINGS.includes(timing)) reason = `consumption_timing inválido (${rec?.consumption_timing})`;
+        else if (usedProducts.has(productId)) reason = `producto ${productId} repetido`;
+        else if (usedTimings.has(timing)) reason = `fase ${timing} repetida`;
+
+        if (reason) {
+            discarded.push({ rec, reason });
+            continue;
+        }
+        usedProducts.add(productId);
+        usedTimings.add(timing);
+        valid.push({ ...rec, product_id: productId, consumption_timing: timing });
+    }
+    return { valid, discarded };
+}
+
+/**
+ * Completa las fases que el LLM no cubrió usando el sistema de reglas, pero SOLO con productos cuyo
+ * momento de uso corresponde a esa fase. Si no hay producto adecuado, la fase queda vacía.
+ */
+export function completeMissingTimings(validRecommendations, userProfile, candidateProducts) {
+    const covered = new Set(validRecommendations.map((r) => r.consumption_timing));
+    const missing = VALID_TIMINGS.filter((t) => !covered.has(t));
+    if (missing.length === 0) return validRecommendations;
+
+    const { recommendations: extra } = getFallbackRecommendations(userProfile, candidateProducts, missing.length, {
+        timings: missing,
+        excludeProductIds: validRecommendations.map((r) => r.product_id),
+    });
+    if (extra.length > 0) {
+        console.log(`🧩 Fases completadas con reglas: ${extra.map((r) => r.consumption_timing).join(', ')}`);
+    }
+    const all = [...validRecommendations, ...extra];
+    return all.sort((a, b) => VALID_TIMINGS.indexOf(a.consumption_timing) - VALID_TIMINGS.indexOf(b.consumption_timing));
+}
+
+function getFallbackRecommendations(userProfile, candidateProducts, numRecommendations = 4, options = {}) {
+    const { timings = VALID_TIMINGS, excludeProductIds = [] } = options;
     console.log("Using fallback recommendation system for user profile:", userProfile.user_id);
     
     // Si no hay productos candidatos, devolver array vacío
@@ -364,12 +425,12 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
             if (goal.includes('musculo') || goal.includes('fuerza')) {
                 // Priorizar productos con más proteína
                 score += (product.protein_g || 0) * 2;
-                if (product.category.toLowerCase().includes('proteina')) score += 10;
+                if (String(product.category || '').toLowerCase().includes('proteina')) score += 10;
             }
             else if (goal.includes('rendimiento') || goal.includes('resistencia')) {
                 // Priorizar productos con más carbohidratos para energía
                 score += (product.carbs_g || 0) * 1.5;
-                if (product.category.toLowerCase().includes('energia')) score += 10;
+                if (String(product.category || '').toLowerCase().includes('energia')) score += 10;
             }
             else if (goal.includes('perder') || goal.includes('peso')) {
                 // Priorizar productos con menos calorías
@@ -377,42 +438,48 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
             }
         }
         
+        // Restricciones absolutas: antes solo restaban puntaje (y el bono por carbohidratos podía
+        // compensarlo); ahora excluyen el producto, igual que los filtros duros del retrieval.
+        let excluded = false;
+
         // Verificar restricciones dietéticas
         if (userProfile.dietary_restrictions) {
             const restrictions = userProfile.dietary_restrictions.toLowerCase();
             const attributes = (product.attributes || []).map(a => a.toLowerCase());
-            
+
             if (restrictions.includes('vegano') && !attributes.includes('vegano')) {
-                score -= 1000; // Penalizar fuertemente si no cumple la restricción
+                excluded = true;
             }
-            else if (restrictions.includes('vegetariano') && 
-                    !attributes.includes('vegetariano') && 
+            else if (restrictions.includes('vegetariano') &&
+                    !attributes.includes('vegetariano') &&
                     !attributes.includes('vegano')) {
-                score -= 1000;
+                excluded = true;
             }
         }
-        
+
         // Verificar tolerancia a cafeína
         if (userProfile.caffeine_tolerance && product.caffeine_mg) {
             const tolerance = userProfile.caffeine_tolerance.toLowerCase();
-            
-            if (tolerance === 'no' && product.caffeine_mg > 0) {
-                score -= 1000; // Eliminar productos con cafeína
+            const caffeine = Number(product.caffeine_mg) || 0;
+
+            if (tolerance === 'no' && caffeine > 0) {
+                excluded = true;
             }
-            else if (tolerance === 'bajo' && product.caffeine_mg > 50) {
-                score -= 500; // Penalizar productos con mucha cafeína
+            else if (tolerance === 'bajo' && caffeine > 50) {
+                excluded = true;
             }
         }
-        
-        return { ...product, score };
+
+        return { ...product, score, excluded };
     });
-    
-    // Ordenar por puntaje
+
+    // Ordenar por puntaje (solo productos que cumplen las restricciones)
+    scoredProducts = scoredProducts.filter((p) => !p.excluded);
     scoredProducts.sort((a, b) => b.score - a.score);
-    
+
     // Distribuir productos por timing (antes, durante, después, diario)
-    const timingNeeded = ['antes', 'durante', 'despues', 'diario'];
-    const usedProductIds = new Set();
+    const timingNeeded = timings;
+    const usedProductIds = new Set(excludeProductIds.map(Number));
     const assignedSlots = [];
 
     const getNaturalTiming = (product) => {
@@ -448,22 +515,11 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
         }
     }
 
-    // Completar slots vacíos con mejores candidatos restantes
-    for (const timing of timingNeeded) {
-        if (assignedSlots.some((slot) => slot.timing === timing)) continue;
-        const fallbackProduct = scoredProducts.find((p) => !usedProductIds.has(p.product_id));
-        if (fallbackProduct) {
-            usedProductIds.add(fallbackProduct.product_id);
-            assignedSlots.push({ product: fallbackProduct, timing });
-        }
-    }
-
-    if (assignedSlots.length < numRecommendations) {
-        const remaining = scoredProducts.filter((p) => !usedProductIds.has(p.product_id));
-        for (const product of remaining.slice(0, numRecommendations - assignedSlots.length)) {
-            usedProductIds.add(product.product_id);
-            assignedSlots.push({ product, timing: getNaturalTiming(product) });
-        }
+    // Ya NO se rellenan fases vacías con cualquier producto: eso asignaba, p. ej., un gel con cafeína
+    // como "diario con el desayuno". Si una fase no tiene producto adecuado, queda sin recomendación.
+    const missingTimings = timingNeeded.filter((t) => !assignedSlots.some((slot) => slot.timing === t));
+    if (missingTimings.length > 0) {
+        console.log(`ℹ️ Fallback: sin producto adecuado para ${missingTimings.join(', ')}`);
     }
 
     const finalRecommendations = assignedSlots.slice(0, numRecommendations).map(({ product, timing }) => {

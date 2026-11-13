@@ -5,6 +5,34 @@ import { findSimilarProducts } from './vectorSearchService.js';
 import Feedback from '../models/feedbackModel.js';
 
 const MAX_CANDIDATE_PRODUCTS = 20; // Número máximo de productos a recuperar
+// Mínimo de candidatos por momento de consumo (pre / durante / post / diario) que recibe el LLM
+const MIN_PER_USAGE_CONTEXT = 3;
+export const USAGE_CONTEXTS = ['pre entrenamiento', 'durante entrenamiento', 'post entrenamiento', 'diario'];
+// Tamaño del ranking vectorial (el catálogo es pequeño; pgvector lo ordena completo sin costo apreciable)
+const VECTOR_POOL_SIZE = 200;
+
+/**
+ * Selecciona hasta `max` productos conservando el orden recibido (similitud o prioridad), pero garantizando
+ * primero `minPer` productos de cada usage_context para que el LLM pueda cubrir antes/durante/después/diario.
+ */
+export function balanceByUsageContext(rankedProducts, max = MAX_CANDIDATE_PRODUCTS, minPer = MIN_PER_USAGE_CONTEXT) {
+    const perContext = new Map();
+    const guaranteed = [];
+    const rest = [];
+    for (const product of rankedProducts) {
+        const ctx = product.usage_context || 'sin contexto';
+        const count = perContext.get(ctx) || 0;
+        if (count < minPer) {
+            guaranteed.push(product);
+            perContext.set(ctx, count + 1);
+        } else {
+            rest.push(product);
+        }
+    }
+    const selected = new Set([...guaranteed, ...rest].slice(0, max));
+    // Conservar el orden original del ranking
+    return rankedProducts.filter((p) => selected.has(p));
+}
 const USE_VECTOR_SEARCH = process.env.USE_VECTOR_SEARCH === 'true'; // Flag para activar/desactivar
 
 export const getCandidateProducts = async (userProfile, trainingData = {}) => {
@@ -58,26 +86,11 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     
     const userEmbedding = await generateUserProfileEmbedding(combinedProfile);
 
-    // 3. Pre-filtrar pool de productos activos antes de cargar embeddings (reduce memoria/CPU)
-    let candidatePoolQuery = `
-      SELECT p.product_id
-      FROM products p
-      WHERE p.is_active = 1
-    `;
-    const candidatePoolParams = [];
-    if (excludedProductIds.length > 0) {
-      const placeholders = excludedProductIds.map(() => '?').join(',');
-      candidatePoolQuery += ` AND p.product_id NOT IN (${placeholders})`;
-      candidatePoolParams.push(...excludedProductIds);
-    }
-    candidatePoolQuery += ' LIMIT 100';
-    const [candidatePoolRows] = await pool.query(candidatePoolQuery, candidatePoolParams);
-    const candidateProductIds = candidatePoolRows.map((row) => row.product_id);
-    
-    // 4. Buscar productos similares por vector (top 30 inicial) dentro del pool pre-filtrado
-    const similarProductIds = await findSimilarProducts(userEmbedding, 30, {
+    // 3. Ranking por similitud directamente en PostgreSQL (pgvector, <=>). Activos y exclusiones por feedback
+    //    negativo se filtran en la misma consulta. Se ordena un pool amplio (VECTOR_POOL_SIZE) para que cada
+    //    momento de consumo tenga candidatos ordenados por similitud; luego se balancea (paso 6).
+    const similarProductIds = await findSimilarProducts(userEmbedding, VECTOR_POOL_SIZE, {
       excludeProductIds: excludedProductIds,
-      candidateProductIds,
     });
     
     // 4. Filtrar productos con feedback negativo
@@ -89,8 +102,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     }
     
     // 5. Obtener detalles completos de los productos similares (sin los excluidos)
-    const placeholders = filteredIds.map(() => '?').join(',');
-    const [products] = await pool.query(`
+    const { rows: products } = await pool.query(`
         SELECT
             p.product_id,
             p.name AS product_name,
@@ -99,7 +111,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
             pt.name AS type_name,
             pc.name AS category_name,
             pc.usage_context,
-            GROUP_CONCAT(DISTINCT pa.name) AS attributes,
+            string_agg(DISTINCT pa.name, ',') AS attributes,
             MAX(pn.serving_size) AS serving_size,
             MAX(pn.energy_kcal) AS energy_kcal,
             MAX(pn.protein_g) AS protein_g,
@@ -113,10 +125,10 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
         LEFT JOIN product_attributes_mapping pam ON p.product_id = pam.product_id
         LEFT JOIN product_attributes pa ON pam.attribute_id = pa.attribute_id
         LEFT JOIN product_nutrition pn ON p.product_id = pn.product_id
-        WHERE p.product_id IN (${placeholders}) AND p.is_active = 1
-        GROUP BY p.product_id
-        ORDER BY FIELD(p.product_id, ${placeholders})
-    `, [...filteredIds, ...filteredIds]);
+        WHERE p.product_id = ANY($1::int[]) AND p.is_active = TRUE
+        GROUP BY p.product_id, pt.name, pc.name, pc.usage_context
+        ORDER BY array_position($1::int[], p.product_id)
+    `, [filteredIds]);
     
     // 4. Aplicar filtros duros (restricciones absolutas)
     const filtered = products.filter(product => {
@@ -155,9 +167,9 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     });
     
     console.log(`✅ Vector search: ${products.length} productos encontrados, ${filtered.length} después de filtros duros`);
-    
-    // 5. Formatear y devolver top 20
-    return filtered.slice(0, MAX_CANDIDATE_PRODUCTS).map(row => ({
+
+    // 6. Balancear por momento de consumo y devolver top 20 (orden de similitud dentro de cada momento)
+    return balanceByUsageContext(filtered).map(row => ({
         product_id: row.product_id,
         name: row.product_name,
         description: row.product_description,
@@ -196,8 +208,8 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
             pt.name AS type_name,
             pc.name AS category_name,
             pc.usage_context,
-            GROUP_CONCAT(DISTINCT pa.name) AS attributes,
-            GROUP_CONCAT(DISTINCT f.name) AS flavors,
+            string_agg(DISTINCT pa.name, ',') AS attributes,
+            string_agg(DISTINCT f.name, ',') AS flavors,
             MAX(pn.serving_size) AS serving_size,
             MAX(pn.energy_kcal) AS energy_kcal,
             MAX(pn.protein_g) AS protein_g,
@@ -213,7 +225,7 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
         LEFT JOIN product_flavors pf ON p.product_id = pf.product_id
         LEFT JOIN flavors f ON pf.flavor_id = f.flavor_id
         LEFT JOIN product_nutrition pn ON p.product_id = pn.product_id
-        WHERE p.is_active = 1
+        WHERE p.is_active = TRUE
     `;
 
     const queryParams = [];
@@ -221,9 +233,8 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
     
     // Excluir productos con feedback negativo
     if (excludedProductIds.length > 0) {
-        const placeholders = excludedProductIds.map(() => '?').join(',');
-        whereClauses.push(`p.product_id NOT IN (${placeholders})`);
-        queryParams.push(...excludedProductIds);
+        queryParams.push(excludedProductIds.map(Number));
+        whereClauses.push(`NOT (p.product_id = ANY($${queryParams.length}::int[]))`);
     }
 
     // Filtrar por restricciones dietéticas
@@ -275,7 +286,6 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
 
     query += `
         GROUP BY p.product_id, pt.name, pc.name, pc.usage_context, p.name, p.description, p.usage_recommendation
-        ORDER BY 
     `;
 
     // Lógica de Priorización (ORDER BY) - Esto es CLAVE
@@ -287,18 +297,18 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
                 orderByClauses.push(`(CASE WHEN pc.name = 'recuperacion' THEN 0 ELSE 1 END)`);
                 // Usamos MAX() para pa.name en el ORDER BY para cumplir con ONLY_FULL_GROUP_BY
                 orderByClauses.push(`MAX(CASE WHEN pa.name = 'alto en proteina' THEN 0 ELSE 1 END)`);
-                orderByClauses.push(`MAX(pn.protein_g) DESC`);
+                orderByClauses.push(`MAX(pn.protein_g) DESC NULLS LAST`);
                 break;
             case 'mejor rendimiento':
             case 'resistencia':
                 orderByClauses.push(`(CASE WHEN pc.name = 'energia' THEN 0 ELSE 1 END)`);
                 // Usamos MAX() para pa.name en el ORDER BY para cumplir con ONLY_FULL_GROUP_BY
                 orderByClauses.push(`MAX(CASE WHEN pa.name = 'alto en carbohidrato' THEN 0 ELSE 1 END)`);
-                orderByClauses.push(`MAX(pn.carbs_g) DESC`);
+                orderByClauses.push(`MAX(pn.carbs_g) DESC NULLS LAST`);
                 break;
             case 'perder peso':
-                orderByClauses.push(`MAX(pn.energy_kcal) ASC`); // Menos calorías primero
-                orderByClauses.push(`MAX(pn.sugars_g) ASC`); // Menos azúcar primero
+                orderByClauses.push(`MAX(pn.energy_kcal) ASC NULLS FIRST`); // Menos calorías primero
+                orderByClauses.push(`MAX(pn.sugars_g) ASC NULLS FIRST`); // Menos azúcar primero
                 break;
             // case 'por salud':
             //     // Podría priorizar vitaminas, productos con menos azúcar, etc.
@@ -314,21 +324,33 @@ async function getCandidateProductsWithSQL(userProfile, excludedProductIds = [])
     }
 
 
-    if (orderByClauses.length > 0) {
-        query += orderByClauses.join(', ');
-    } else {
-        // Un ordenamiento por defecto si no hay criterios específicos
-        query += `p.product_id`;
-    }
+    // Desempate determinista por product_id (PostgreSQL no garantiza orden entre empates)
+    orderByClauses.push(`p.product_id`);
 
-    query += ` LIMIT ?`;
+    // Cobertura por momento de consumo: antes se tomaban los 20 primeros por prioridad y, p. ej. con
+    // objetivo "resistencia", los 20 eran de energía (sin recuperación ni diario). Ahora se garantizan
+    // MIN_PER_USAGE_CONTEXT productos de cada usage_context y el resto se completa por prioridad.
+    const rankedSelect = query.replace(
+        /^\s*SELECT/,
+        `SELECT ROW_NUMBER() OVER (ORDER BY ${orderByClauses.join(', ')}) AS priority_rank,`
+    );
+    queryParams.push(MIN_PER_USAGE_CONTEXT);
+    const quotaParam = `$${queryParams.length}`;
     queryParams.push(MAX_CANDIDATE_PRODUCTS);
+    query = `
+        SELECT * FROM (
+            SELECT ranked.*,
+                   ROW_NUMBER() OVER (PARTITION BY ranked.usage_context ORDER BY ranked.priority_rank) AS context_rank
+            FROM (${rankedSelect}) ranked
+        ) balanced
+        ORDER BY (balanced.context_rank <= ${quotaParam}) DESC, balanced.priority_rank
+        LIMIT $${queryParams.length}`;
 
     // console.log("Constructed Query:", query); // Para debugging
     // console.log("Query Params:", queryParams); // Para debugging
 
     try {
-        const [rows] = await pool.query(query, queryParams);
+        const { rows } = await pool.query(query, queryParams);
         if (rows.length === 0) {
             console.warn("No candidate products found with current filters/profile. Consider broadening criteria or fetching defaults.");
             // Podrías tener una lógica de fallback aquí para devolver algunos productos por defecto si no se encuentra nada.

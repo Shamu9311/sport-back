@@ -38,7 +38,8 @@ export const saveProfile = async (req, res) => {
     } catch (error) {
         console.error('[ProfileController] Error al guardar perfil:', error);
         
-        if (error.code === 'ER_NO_REFERENCED_ROW_2') {
+        // 23503 = foreign_key_violation (PostgreSQL); antes ER_NO_REFERENCED_ROW_2 en MariaDB
+        if (error.code === '23503') {
             return sendError(res, 404, 'El usuario asociado no existe');
         }
 

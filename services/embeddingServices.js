@@ -31,8 +31,15 @@ function generateDeterministicEmbedding(text, dimensions = 768) {
   return vector;
 }
 
+// text-embedding-004 fue retirado de la API de Gemini (404). gemini-embedding-001 permite fijar
+// outputDimensionality=768, compatible con las columnas vector(768).
+export const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'gemini-embedding-001';
+export const EMBEDDING_DIMENSIONS = 768;
+export const TASK_TYPES = { document: 'RETRIEVAL_DOCUMENT', query: 'RETRIEVAL_QUERY' };
+
 // Convertir texto a vectores usando Gemini
-export async function generateEmbedding(text) {
+// taskType: RETRIEVAL_DOCUMENT para lo que se indexa (productos) y RETRIEVAL_QUERY para la consulta (perfil).
+export async function generateEmbedding(text, { taskType = TASK_TYPES.document } = {}) {
   if (process.env.MOCK_EMBEDDINGS === 'true') {
     return generateDeterministicEmbedding(text);
   }
@@ -40,19 +47,24 @@ export async function generateEmbedding(text) {
   if (!geminiClient) {
     throw new Error('Gemini client not initialized. Check GEMINI_API_KEY in .env');
   }
-  
+
   try {
-    // Usar modelo de embeddings de Gemini
-    const model = geminiClient.getGenerativeModel({ 
-      model: "text-embedding-004"  // Modelo de embeddings de Gemini (768 dimensiones)
+    const model = geminiClient.getGenerativeModel({ model: EMBEDDING_MODEL });
+
+    const result = await model.embedContent({
+      content: { role: 'user', parts: [{ text: String(text || '').substring(0, 10000) }] },
+      taskType,
+      outputDimensionality: EMBEDDING_DIMENSIONS,
     });
-    
-    const result = await model.embedContent(text.substring(0, 10000));
-    
-    return result.embedding.values;  // Array de floats (768 dimensiones)
-    
+
+    const values = result.embedding.values;
+    if (!Array.isArray(values) || values.length !== EMBEDDING_DIMENSIONS) {
+      throw new Error(`Embedding con dimensión inesperada (${values?.length}); se esperaban ${EMBEDDING_DIMENSIONS}.`);
+    }
+    return values;
+
   } catch (error) {
-    console.error('Error generating embedding with Gemini:', error);
+    console.error('Error generating embedding with Gemini:', error.message);
     throw error;
   }
 }
@@ -70,8 +82,8 @@ export async function generateUserProfileEmbedding(userProfile) {
     Tolerancia cafeína: ${userProfile.caffeine_tolerance || 'media'}
     Nivel sudoración: ${userProfile.sweat_level || 'medio'}
   `.trim();
-  
-  return await generateEmbedding(profileText);
+
+  return await generateEmbedding(profileText, { taskType: TASK_TYPES.query });
 }
 
 // Generar embedding para producto
@@ -87,7 +99,9 @@ export async function generateProductEmbedding(product) {
     Calorías: ${product.energy_kcal || 0} kcal
     Cafeína: ${product.caffeine_mg || 0}mg
     Atributos: ${product.attributes || 'ninguno'}
+    Momento de uso: ${product.usage_context || 'general'}
+    Componentes: ${product.other_components && product.other_components !== 'None' ? product.other_components : 'no especificados'}
   `.trim();
-  
-  return await generateEmbedding(productText);
+
+  return await generateEmbedding(productText, { taskType: TASK_TYPES.document });
 }

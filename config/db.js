@@ -1,31 +1,51 @@
-import { createPool } from 'mysql2/promise'; // Usar la versión promise
-import 'dotenv/config';
+// config/db.js — Conexión a PostgreSQL (Supabase) con node-postgres.
+import pg from 'pg';
+import { buildPoolConfig } from './dbConfig.js';
 
-export const createConnection = () => {
-  return createPool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+export { parseDatabaseUrl, resolveDatabaseUrl, buildPoolConfig } from './dbConfig.js';
+
+const { Pool } = pg;
+
+export const createConnection = (url) => {
+  const newPool = new Pool(buildPoolConfig(url));
+  newPool.on('error', (err) => {
+    console.error('❌ Error inesperado en cliente PostgreSQL inactivo:', err.message);
   });
+  return newPool;
 };
 
-// Crear y exportar el pool
 const pool = createConnection();
+
+/** Atajo: ejecuta una consulta parametrizada ($1, $2, ...) y devuelve el resultado de pg. */
+export const query = (text, params) => pool.query(text, params);
+
+/** Ejecuta `fn(client)` dentro de una transacción (BEGIN/COMMIT/ROLLBACK). */
+export async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export { pool };
 export default pool;
 
-// Test de conexión automático
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    console.log('✅ Conexión a MySQL exitosa');
-    conn.release();
-  } catch (err) {
-    console.error('❌ Error de conexión a MySQL:', err);
-  }
-})();
+// Test de conexión automático (fuera de los tests para no ensuciar la salida)
+if (process.env.NODE_ENV !== 'test') {
+  (async () => {
+    try {
+      await pool.query('SELECT 1');
+      console.log('✅ Conexión a PostgreSQL exitosa');
+    } catch (err) {
+      console.error('❌ Error de conexión a PostgreSQL:', err.message);
+    }
+  })();
+}

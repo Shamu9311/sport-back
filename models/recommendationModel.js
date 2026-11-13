@@ -1,14 +1,16 @@
 import { BaseModel } from './BaseModel.js';
+import { withTransaction } from '../config/db.js';
 
 class Recommendation extends BaseModel {
   static tableName = 'recommendations';
+  static primaryKey = 'recommendation_id';
 
   // Obtener recomendaciones para un entrenamiento específico
   static async getByTrainingSession(userId, sessionId) {
-    const [recommendations] = await this.pool.query(`
-      SELECT r.*, 
-             p.name as product_name, 
-             p.image_url, 
+    const { rows } = await this.pool.query(`
+      SELECT r.*,
+             p.name as product_name,
+             p.image_url,
              p.description,
              r.consumption_timing,
              r.consumption_instructions,
@@ -16,65 +18,117 @@ class Recommendation extends BaseModel {
              r.timing_minutes
       FROM recommendations r
       JOIN products p ON r.product_id = p.product_id
-      WHERE r.user_id = ? AND r.session_id = ?
-      ORDER BY r.recommended_at DESC
+      WHERE r.user_id = $1 AND r.session_id = $2
+      ORDER BY r.recommended_at DESC, r.recommendation_id ASC
     `, [userId, sessionId]);
-    return recommendations;
+    return rows;
   }
 
   static async deleteBySession(sessionId) {
-    await this.pool.query(`DELETE FROM ${this.tableName} WHERE session_id = ?`, [sessionId]);
+    await this.pool.query(`DELETE FROM ${this.tableName} WHERE session_id = $1`, [sessionId]);
+  }
+
+  static VALID_TIMINGS = ['antes', 'durante', 'despues', 'diario'];
+
+  /** Normaliza los valores que llegan del LLM a las restricciones de la tabla. */
+  static normalizeRecommendationInput({ reason, consumption_timing, recommended_quantity, timing_minutes, ...rest }) {
+    // feedback (positivo/neutral/negativo) — solo lo llena el usuario
+    // feedback_notes almacena el razonamiento del LLM
+    const MAX_NOTES_LENGTH = 500;
+    let feedbackNotes = reason || 'Recomendación personalizada';
+    if (feedbackNotes.length > MAX_NOTES_LENGTH) {
+      console.warn(`El feedback_notes excede el límite de ${MAX_NOTES_LENGTH} caracteres. Truncando...`);
+      feedbackNotes = feedbackNotes.substring(0, MAX_NOTES_LENGTH - 3) + '...';
+    }
+
+    // recommended_quantity es varchar(100): MariaDB (modo no estricto) truncaba en silencio, PostgreSQL falla.
+    const MAX_QUANTITY_LENGTH = 100;
+    const quantity =
+      typeof recommended_quantity === 'string' && recommended_quantity.length > MAX_QUANTITY_LENGTH
+        ? recommended_quantity.substring(0, MAX_QUANTITY_LENGTH)
+        : recommended_quantity;
+
+    // consumption_timing tiene CHECK: un valor inesperado del LLM se guarda como NULL en vez de abortar.
+    const timing = this.VALID_TIMINGS.includes(consumption_timing) ? consumption_timing : null;
+    const minutes = Number.isInteger(Number(timing_minutes)) && timing_minutes !== null && timing_minutes !== ''
+      ? Number(timing_minutes)
+      : null;
+
+    return { ...rest, feedbackNotes, quantity, timing, minutes };
+  }
+
+  static async insertRecommendation(client, input) {
+    const { userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes } =
+      this.normalizeRecommendationInput(input);
+    const { rows } = await client.query(
+      `INSERT INTO recommendations
+      (user_id, session_id, product_id, feedback, feedback_notes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at)
+      VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW())
+      RETURNING recommendation_id`,
+      [userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes]
+    );
+    return rows[0].recommendation_id;
+  }
+
+  static async selectWithProduct(client, recommendationIds) {
+    const { rows } = await client.query(
+      `SELECT r.*,
+              p.name as product_name,
+              p.description as product_description,
+              p.image_url as product_image,
+              r.consumption_timing,
+              r.consumption_instructions,
+              r.recommended_quantity,
+              r.timing_minutes
+       FROM recommendations r
+       JOIN products p ON r.product_id = p.product_id
+       WHERE r.recommendation_id = ANY($1::int[])
+       ORDER BY array_position($1::int[], r.recommendation_id)`,
+      [recommendationIds]
+    );
+    return rows;
   }
 
   // Crear una nueva recomendación
-  static async createRecommendation({ userId, sessionId, productId, reason, score, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes }) {
-    const connection = await this.pool.getConnection();
+  static async createRecommendation(input) {
     try {
-      await connection.beginTransaction();
-
-      // feedback es ENUM (positivo/neutral/negativo) — solo lo llena el usuario
-      // feedback_notes almacena el razonamiento del LLM
-      const MAX_NOTES_LENGTH = 500;
-      let feedbackNotes = reason || 'Recomendación personalizada';
-      
-      if (feedbackNotes.length > MAX_NOTES_LENGTH) {
-        console.warn(`El feedback_notes excede el límite de ${MAX_NOTES_LENGTH} caracteres. Truncando...`);
-        feedbackNotes = feedbackNotes.substring(0, MAX_NOTES_LENGTH - 3) + '...';
-      }
-
-      // Insertar la recomendación
-      const [result] = await connection.query(
-        `INSERT INTO recommendations 
-        (user_id, session_id, product_id, feedback, feedback_notes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at)
-        VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, NOW())`,
-        [userId, sessionId, productId, feedbackNotes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes]
-      );
-
-      // Obtener la recomendación recién creada con los datos del producto
-      const [recommendations] = await connection.query(
-        `SELECT r.*, 
-                p.name as product_name, 
-                p.description as product_description,
-                p.image_url as product_image,
-                r.consumption_timing,
-                r.consumption_instructions,
-                r.recommended_quantity,
-                r.timing_minutes
-         FROM recommendations r
-         JOIN products p ON r.product_id = p.product_id
-         WHERE r.recommendation_id = ?`,
-        [result.insertId]
-      );
-
-      await connection.commit();
-      return recommendations[0];
-      
+      return await withTransaction(async (client) => {
+        const id = await this.insertRecommendation(client, input);
+        const [recommendation] = await this.selectWithProduct(client, [id]);
+        return recommendation;
+      });
     } catch (error) {
-      await connection.rollback();
       console.error('Error en createRecommendation:', error);
       throw error;
-    } finally {
-      connection.release();
+    }
+  }
+
+  /**
+   * Crea todas las recomendaciones de una sesión en UNA transacción: quien consulte la sesión
+   * ve 0 o todas, nunca un estado parcial (antes se insertaban una a una y el frontend podía
+   * mostrar solo 1–3 productos al sondear durante la regeneración).
+   * Si una inserción falla, se descarta solo esa (SAVEPOINT) y se conservan las demás.
+   */
+  static async createRecommendationsBatch(inputs) {
+    if (!inputs || inputs.length === 0) return [];
+    try {
+      return await withTransaction(async (client) => {
+        const ids = [];
+        for (const input of inputs) {
+          await client.query('SAVEPOINT rec_item');
+          try {
+            ids.push(await this.insertRecommendation(client, input));
+            await client.query('RELEASE SAVEPOINT rec_item');
+          } catch (error) {
+            await client.query('ROLLBACK TO SAVEPOINT rec_item');
+            console.error(`Error creando recomendación para producto ${input.productId}:`, error.message);
+          }
+        }
+        return ids.length ? this.selectWithProduct(client, ids) : [];
+      });
+    } catch (error) {
+      console.error('Error en createRecommendationsBatch:', error);
+      throw error;
     }
   }
 
@@ -86,14 +140,14 @@ class Recommendation extends BaseModel {
         trainingData && trainingData.sessionId != null ? Number(trainingData.sessionId) : 0;
       const seed = (uid * 7919 + sessionPart * 31) >>> 0;
 
-      const notRecommendedSql = `p.is_active = 1 AND NOT EXISTS (
+      const notRecommendedSql = `p.is_active = TRUE AND NOT EXISTS (
         SELECT 1 FROM recommendations r
         WHERE r.product_id = p.product_id
-        AND r.user_id = ?
+        AND r.user_id = $1
       )`;
 
-      const [countRows] = await this.pool.query(
-        `SELECT COUNT(*) as c FROM products p WHERE ${notRecommendedSql}`,
+      const { rows: countRows } = await this.pool.query(
+        `SELECT COUNT(*)::int as c FROM products p WHERE ${notRecommendedSql}`,
         [userId]
       );
       const totalFiltered = countRows[0]?.c || 0;
@@ -103,11 +157,11 @@ class Recommendation extends BaseModel {
         offset = maxOff > 0 ? seed % (maxOff + 1) : 0;
       }
 
-      const [rows] = await this.pool.query(
+      const { rows } = await this.pool.query(
         `SELECT p.* FROM products p
          WHERE ${notRecommendedSql}
          ORDER BY p.product_id ASC
-         LIMIT 3 OFFSET ?`,
+         LIMIT 3 OFFSET $2`,
         [userId, offset]
       );
 
@@ -116,18 +170,18 @@ class Recommendation extends BaseModel {
 
       if (list.length < 3) {
         const need = 3 - list.length;
-        const [countAll] = await this.pool.query(
-          `SELECT COUNT(*) as c FROM products p WHERE p.is_active = 1`
+        const { rows: countAll } = await this.pool.query(
+          `SELECT COUNT(*)::int as c FROM products p WHERE p.is_active = TRUE`
         );
         const totalAll = countAll[0]?.c || 0;
         const maxOff2 = Math.max(0, totalAll - (need + 2));
         const offset2 = maxOff2 > 0 ? (seed ^ 0x9e3779b9) % (maxOff2 + 1) : 0;
-        const [additional] = await this.pool.query(
+        const { rows: additional } = await this.pool.query(
           `SELECT p.* FROM products p
-           WHERE p.is_active = 1
+           WHERE p.is_active = TRUE
            ORDER BY p.product_id ASC
-           LIMIT ? OFFSET ?`,
-          [need + 8, offset2]
+           LIMIT $1 OFFSET $2`,
+          [need + 8, Math.abs(offset2)]
         );
         for (const p of additional || []) {
           if (list.length >= 3) break;
@@ -160,13 +214,13 @@ class Recommendation extends BaseModel {
 
   // Actualizar feedback de una recomendación
   static async updateFeedback(recommendationId, feedback, notes = null) {
-    const [result] = await this.pool.query(
-      `UPDATE recommendations 
-       SET feedback = ?, feedback_notes = ? 
-       WHERE recommendation_id = ?`,
+    const result = await this.pool.query(
+      `UPDATE recommendations
+       SET feedback = $1, feedback_notes = $2
+       WHERE recommendation_id = $3`,
       [feedback, notes, recommendationId]
     );
-    return result.affectedRows > 0;
+    return result.rowCount > 0;
   }
 }
 

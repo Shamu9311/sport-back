@@ -9,15 +9,15 @@ class NotificationController {
     try {
       const { userId } = req.params;
 
-      const [preferences] = await pool.query(
-        'SELECT * FROM notification_preferences WHERE user_id = ?',
+      const { rows: preferences } = await pool.query(
+        'SELECT * FROM notification_preferences WHERE user_id = $1',
         [userId]
       );
 
       if (preferences.length === 0) {
         // Crear preferencias por defecto si no existen
         await pool.query(
-          'INSERT INTO notification_preferences (user_id) VALUES (?)',
+          'INSERT INTO notification_preferences (user_id) VALUES ($1)',
           [userId]
         );
 
@@ -51,8 +51,8 @@ class NotificationController {
       const { consumption_reminders, training_alerts, preferred_time } = req.body;
 
       // Verificar si existen preferencias
-      const [existing] = await pool.query(
-        'SELECT * FROM notification_preferences WHERE user_id = ?',
+      const { rows: existing } = await pool.query(
+        'SELECT * FROM notification_preferences WHERE user_id = $1',
         [userId]
       );
 
@@ -61,24 +61,24 @@ class NotificationController {
         await pool.query(
           `INSERT INTO notification_preferences 
            (user_id, consumption_reminders, training_alerts, preferred_time) 
-           VALUES (?, ?, ?, ?)`,
+           VALUES ($1, $2, $3, $4)`,
           [userId, consumption_reminders, training_alerts, preferred_time]
         );
       } else {
         // Actualizar preferencias existentes
         await pool.query(
           `UPDATE notification_preferences 
-           SET consumption_reminders = ?, 
-               training_alerts = ?, 
-               preferred_time = ?
-           WHERE user_id = ?`,
+           SET consumption_reminders = $1, 
+               training_alerts = $2, 
+               preferred_time = $3
+           WHERE user_id = $4`,
           [consumption_reminders, training_alerts, preferred_time, userId]
         );
       }
 
       // Obtener preferencias actualizadas
-      const [updated] = await pool.query(
-        'SELECT * FROM notification_preferences WHERE user_id = ?',
+      const { rows: updated } = await pool.query(
+        'SELECT * FROM notification_preferences WHERE user_id = $1',
         [userId]
       );
 

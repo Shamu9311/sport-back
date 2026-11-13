@@ -8,7 +8,7 @@ import {
   waitForRecommendations,
 } from '../helpers/requestHelpers.js';
 import { generateUserProfileEmbedding } from '../../services/embeddingServices.js';
-import { cosineSimilarity } from '../../services/vectorSearchService.js';
+import { cosineSimilarity, fromPgVector } from '../../services/vectorSearchService.js';
 import pool from '../../config/db.js';
 
 async function loadAppWithVectorSearch(enabled) {
@@ -54,11 +54,13 @@ describe('Flujo vectorial RAG', () => {
   });
 
   it('recupera embeddings de productos y calcula similitud coseno', async () => {
-    const [rows] = await pool.query(
-      'SELECT embedding FROM product_embeddings WHERE product_id = 1 LIMIT 1'
+    // pgvector devuelve el vector como texto '[0.1,0.2,...]'
+    const { rows } = await pool.query(
+      'SELECT embedding::text AS embedding, vector_dims(embedding) AS dims FROM product_embeddings WHERE product_id = 1 LIMIT 1'
     );
     expect(rows.length).toBe(1);
-    const productEmbedding = JSON.parse(rows[0].embedding);
+    expect(rows[0].dims).toBe(768);
+    const productEmbedding = fromPgVector(rows[0].embedding);
     const profileEmbedding = await generateUserProfileEmbedding({
       primary_goal: 'mejor rendimiento',
       dietary_restrictions: 'no',
@@ -82,7 +84,7 @@ describe('Flujo vectorial RAG', () => {
     expect(trainingRes.status).toBe(201);
 
     const sessionId = trainingRes.body.data.session_id;
-    const { recommendations } = await waitForRecommendations(token, sessionId, { app });
+    const { recommendations } = await waitForRecommendations(token, sessionId, { app, minCount: 4 });
     expect(recommendations).toHaveLength(4);
   });
 });

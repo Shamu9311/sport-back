@@ -8,6 +8,7 @@ vi.mock('../../models/trainingSessionModel.js', () => ({
     updateSession: vi.fn(),
     deleteSession: vi.fn(),
     formatDate: vi.fn((d) => d),
+    changedRecommendationFields: vi.fn(() => []),
   },
 }));
 
@@ -89,16 +90,33 @@ describe('Sesiones de entrenamiento - unitarias', () => {
       sport_type: '10K',
       notes: '',
     });
+    TrainingSession.changedRecommendationFields.mockReturnValue(['duration_min']);
     const req = {
       params: { id: '3' },
       user: { id: 5 },
       body: { duration_min: 60 },
+      trainingSession: { session_id: 3, duration_min: 45 },
     };
     const res = mockRes();
     await updateSession(req, res);
     expect(TrainingSession.updateSession).toHaveBeenCalledWith('3', { duration_min: 60 });
     expect(Recommendation.deleteBySession).toHaveBeenCalledWith('3');
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('guardar sin cambios reales NO borra ni regenera recomendaciones', async () => {
+    TrainingSession.changedRecommendationFields.mockReturnValue([]);
+    TrainingSession.updateSession.mockResolvedValue({ session_id: 3, duration_min: 45 });
+    const req = {
+      params: { id: '3' },
+      user: { id: 5 },
+      body: { duration_min: 45, weather: 'calido' },
+      trainingSession: { session_id: 3, duration_min: 45, weather: 'calido' },
+    };
+    const res = mockRes();
+    await updateSession(req, res);
+    expect(Recommendation.deleteBySession).not.toHaveBeenCalled();
+    expect(res.json.mock.calls[0][0].recommendationsRegenerating).toBe(false);
   });
 
   it('eliminación de sesión', async () => {
