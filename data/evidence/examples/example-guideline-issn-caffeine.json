@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "example-guideline-issn-caffeine",
+    "source_type": "position_stand",
+    "title": "International society of sports nutrition position stand: caffeine and exercise performance",
+    "authors": ["Guest NS", "VanDusseldorp TA", "Nelson MT", "Grgic J", "Schoenfeld BJ", "Jenkins NDM", "Arent SM", "Antonio J", "Stout JR", "Trexler ET", "Smith-Ryan AE", "Goldstein ER", "Kalman DS", "Campbell BI"],
+    "organization": "International Society of Sports Nutrition",
+    "journal": "Journal of the International Society of Sports Nutrition",
+    "year": 2021,
+    "doi": "10.1186/s12970-020-00383-4",
+    "pmid": "33388079",
+    "url": "https://doi.org/10.1186/s12970-020-00383-4",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: posición oficial de una sociedad científica reconocida, basada en revisión de la literatura.",
+    "review_status": "draft",
+    "notes": "EJEMPLO DE ESTRUCTURA basado en una fuente real. Antes de marcarlo 'reviewed', verificar metadatos, financiación, conflictos de interés y cada claim contra el texto original.",
+    "language": "en"
+  },
+  "chunks": [
+    {
+      "chunk_key": "position-dose-timing",
+      "section": "recommendation",
+      "heading": "Position statements",
+      "content": "Resumen propio: la posición indica que la cafeína mejora el rendimiento en múltiples modalidades de ejercicio con dosis de 3–6 mg/kg, consumidas típicamente unos 60 min antes del ejercicio.",
+      "content_kind": "own_summary"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "caffeine-dose-pre-exercise",
+      "claim_type": "dosage_guideline",
+      "ingredient": "caffeine",
+      "ingredient_name_raw": "caffeine",
+      "population": "adultos que realizan ejercicio (según la posición)",
+      "dose_text": "3–6 mg/kg",
+      "dose_value": 3,
+      "dose_value_max": 6,
+      "dose_unit": "mg",
+      "dose_relative": "mg/kg",
+      "timing_context": ["pre"],
+      "timing_details": "Típicamente unos 60 min antes del ejercicio (verificar redacción literal).",
+      "timing_evidence_strength": "moderate",
+      "outcome": "rendimiento en ejercicio",
+      "effect_direction": "positive",
+      "statistical_significance": "not_tested",
+      "result_summary": "La posición respalda el uso de cafeína en dosis de 3–6 mg/kg para mejorar el rendimiento en diversas modalidades.",
+      "practical_interpretation": "La dosis debe calcularse por kg de peso corporal del usuario; un producto con dosis fija puede quedar por debajo o por encima del rango.",
+      "evidence_strength": "A",
+      "review_status": "draft",
+      "chunk_keys": ["position-dose-timing"]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 2,
+      "relation_type": "ingredient",
+      "ingredient": "caffeine",
+      "claim_key": "caffeine-dose-pre-exercise",
+      "relevance": 0.6,
+      "rationale": "El producto contiene cafeína (75 mg por gel, product_ingredients). La posición respalda el ingrediente, no el producto."
+    }
+  ]
+}

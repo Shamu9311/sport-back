@@ -94,6 +94,43 @@ export async function runIntegrityChecks(client, { dump = null } = {}) {
     );
   }
 
+  // 4b. Capa de evidencia e ingredientes (migraciones 008–010), si existe
+  const { rows: evidenceReady } = await client.query("SELECT to_regclass('public.evidence_ingest_runs') IS NOT NULL AS ok");
+  if (evidenceReady[0].ok) {
+    const evidenceChecks = [
+      ['Fabricante sin claims de eficacia/seguridad',
+       `SELECT COUNT(*)::int n FROM evidence_claims c JOIN evidence_sources s USING (source_id)
+        WHERE s.source_category = 'manufacturer_specification' AND c.claim_type NOT IN ('composition','usage_instruction')`],
+      ['Fuentes científicas/guías revisadas con nivel A–D',
+       `SELECT COUNT(*)::int n FROM evidence_sources
+        WHERE review_status = 'reviewed' AND source_category <> 'manufacturer_specification' AND evidence_level IS NULL`],
+      ['Embeddings de evidencia de 768 dims y norma > 0',
+       `SELECT COUNT(*)::int n FROM evidence_chunks
+        WHERE embedding IS NOT NULL AND (vector_dims(embedding) <> 768 OR vector_norm(embedding) = 0)`],
+      ['Claim ↔ chunk de la misma fuente',
+       `SELECT COUNT(*)::int n FROM evidence_claim_chunks cc JOIN evidence_claims c USING (claim_id)
+        JOIN evidence_chunks ch ON ch.chunk_id = cc.chunk_id WHERE c.source_id <> ch.source_id`],
+      ['not_applicable solo en composición/instrucciones',
+       `SELECT COUNT(*)::int n FROM evidence_claims
+        WHERE (claim_type IN ('composition','usage_instruction')) <> (effect_direction = 'not_applicable')`],
+      ['product_ingredients con ingredientes activos',
+       `SELECT COUNT(*)::int n FROM product_ingredients pi JOIN ingredients i USING (ingredient_id) WHERE NOT i.is_active`],
+    ];
+    for (const [name, sql] of evidenceChecks) {
+      const { rows } = await client.query(sql);
+      check(name, rows[0].n === 0, rows[0].n ? `${rows[0].n} filas incorrectas` : '');
+    }
+    const { rows: ev } = await client.query(`
+      SELECT (SELECT COUNT(*)::int FROM evidence_sources) sources,
+             (SELECT COUNT(*)::int FROM evidence_sources WHERE review_status = 'reviewed') reviewed,
+             (SELECT COUNT(*)::int FROM evidence_claims) claims,
+             (SELECT COUNT(*)::int FROM evidence_chunks) chunks,
+             (SELECT COUNT(*)::int FROM evidence_chunks WHERE embedding IS NULL OR embedded_content_hash IS DISTINCT FROM content_hash) chunks_pending,
+             (SELECT COUNT(*)::int FROM product_ingredients) product_ingredients,
+             (SELECT COUNT(*)::int FROM ingredient_mapping_review WHERE status = 'pending') ingredient_reviews_pending`);
+    console.log(`ℹ️  evidencia: ${JSON.stringify(ev[0])}`);
+  }
+
   // 5. Secuencias IDENTITY por delante del máximo id
   const { rows: idCols } = await client.query(`
     SELECT table_name, column_name FROM information_schema.columns

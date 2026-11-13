@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "example-manufacturer-beta-fuel-gel",
+    "source_type": "manufacturer_specification",
+    "title": "EJEMPLO DE ESTRUCTURA: ficha del fabricante de BETA Fuel Dual Source Energy Gel",
+    "organization": "Science in Sport",
+    "url": "https://www.scienceinsport.com/",
+    "accessed_date": "2026-11-13",
+    "peer_reviewed": false,
+    "review_status": "draft",
+    "notes": "EJEMPLO: reemplazar la URL por la ficha oficial exacta del producto y transcribir la composición y las instrucciones vigentes. El nivel de evidencia se deja vacío: la categoría manufacturer_specification ya identifica la naturaleza de la fuente.",
+    "language": "en"
+  },
+  "chunks": [
+    {
+      "chunk_key": "composition",
+      "section": "product_information",
+      "heading": "Nutrition and ingredients",
+      "content": "Resumen propio: 40 g de carbohidratos por gel (60 ml) en proporción maltodextrina:fructosa 1:0.8.",
+      "content_kind": "own_summary"
+    },
+    {
+      "chunk_key": "directions",
+      "section": "product_information",
+      "heading": "Directions for use",
+      "content": "Resumen propio de las instrucciones del catálogo actual: para eventos de más de 2 horas, consumir 1–2 geles por hora.",
+      "content_kind": "own_summary"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "composition-carbohydrate",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 4,
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "dose_text": "40 g de carbohidratos por gel",
+      "dose_value": 40,
+      "dose_unit": "g",
+      "timing_context": [
+        "not_specified"
+      ],
+      "effect_direction": "not_applicable",
+      "statistical_significance": "not_tested",
+      "result_summary": "El fabricante declara 40 g de carbohidratos por gel en proporción maltodextrina:fructosa 1:0.8.",
+      "review_status": "draft",
+      "chunk_keys": [
+        "composition"
+      ]
+    },
+    {
+      "claim_key": "directions-for-use",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 4,
+      "frequency": "1–2 geles por hora",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Instrucción del fabricante para eventos de más de 2 horas.",
+      "timing_evidence_strength": "not_assessed",
+      "conditions": {
+        "min_exercise_minutes": 120
+      },
+      "effect_direction": "not_applicable",
+      "statistical_significance": "not_tested",
+      "result_summary": "El fabricante indica consumir 1–2 geles por hora en eventos de más de 2 horas.",
+      "review_status": "draft",
+      "chunk_keys": [
+        "directions"
+      ]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 4,
+      "relation_type": "manufacturer_specification",
+      "claim_key": "composition-carbohydrate",
+      "relevance": 1,
+      "rationale": "Ficha oficial del propio producto (composición). No constituye evidencia de eficacia."
+    }
+  ],
+  "product_ingredients": [
+    {
+      "product_id": 4,
+      "ingredient": "carbohydrate",
+      "amount": 40,
+      "unit": "g",
+      "basis": "per_serving",
+      "serving_description": "1 gel (60 ml)"
+    },
+    {
+      "product_id": 4,
+      "ingredient": "maltodextrin",
+      "amount": 1,
+      "unit": "ratio",
+      "basis": "unspecified",
+      "notes": "Proporción maltodextrina:fructosa 1:0.8"
+    },
+    {
+      "product_id": 4,
+      "ingredient": "fructose",
+      "amount": 0.8,
+      "unit": "ratio",
+      "basis": "unspecified",
+      "notes": "Proporción maltodextrina:fructosa 1:0.8"
+    }
+  ]
+}

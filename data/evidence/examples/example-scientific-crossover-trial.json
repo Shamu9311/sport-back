@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "example-scientific-crossover-trial",
+    "source_type": "crossover_trial",
+    "title": "EJEMPLO DE ESTRUCTURA: ensayo cruzado aleatorizado sobre maltodextrina:fructosa 1:0.8 durante ciclismo prolongado",
+    "authors": ["Autor Ejemplo A", "Autor Ejemplo B"],
+    "journal": "Revista de ejemplo (ficticia)",
+    "year": 2024,
+    "publication_date": "2024-03-15",
+    "doi": "10.5555/example.2024.001",
+    "url": "https://doi.org/10.5555/example.2024.001",
+    "open_access": false,
+    "license": "all rights reserved",
+    "peer_reviewed": true,
+    "evidence_level": "B",
+    "evidence_level_rationale": "B1: ensayo cruzado aleatorizado, doble ciego, con comparador isocalórico; n=12 (sin degradación por imprecisión, n ≥ 10).",
+    "funding": "Financiación declarada por un fabricante de suplementos (ficticio).",
+    "industry_funded": true,
+    "conflict_of_interest": "Dos autores declaran afiliación con el financiador (ficticio).",
+    "review_status": "draft",
+    "notes": "FUENTE FICTICIA: solo ilustra el contrato y se usa en pruebas automatizadas. No ingerir en la base principal.",
+    "language": "es"
+  },
+  "chunks": [
+    {
+      "chunk_key": "abstract",
+      "section": "abstract",
+      "heading": "Resumen",
+      "content": "Resumen propio (ficticio): doce ciclistas entrenados completaron 180 min a intensidad moderada seguidos de una contrarreloj, ingiriendo 90 g/h de maltodextrina:fructosa 1:0.8 o glucosa isocalórica.",
+      "content_kind": "own_summary"
+    },
+    {
+      "chunk_key": "methods-protocol",
+      "section": "methods",
+      "heading": "Protocolo experimental",
+      "page": "4",
+      "content": "Resumen propio (ficticio): ingesta cada 20 min durante el ejercicio; diseño cruzado aleatorizado con 7 días de lavado.",
+      "content_kind": "own_summary"
+    },
+    {
+      "chunk_key": "results-time-trial",
+      "section": "results",
+      "heading": "Rendimiento en contrarreloj",
+      "page": "6",
+      "content": "Resumen propio (ficticio): sin diferencias significativas en el tiempo de contrarreloj entre condiciones.",
+      "content_kind": "own_summary"
+    },
+    {
+      "chunk_key": "results-gi",
+      "section": "results",
+      "heading": "Síntomas gastrointestinales",
+      "page": "7",
+      "content": "Resumen propio (ficticio): menor puntuación de malestar gastrointestinal con la formulación 1:0.8; mayor incidencia de náuseas en la fase final con ambas condiciones a 90 g/h.",
+      "content_kind": "own_summary"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "tt-performance",
+      "claim_type": "efficacy",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "ingredient_name_raw": "maltodextrin:fructose (1:0.8)",
+      "population": "ciclistas entrenados",
+      "sample_size": 12,
+      "sex": "male",
+      "training_status": "trained",
+      "sport": "cycling",
+      "exercise_context": "180 min a intensidad moderada seguidos de contrarreloj",
+      "exercise_duration": "180 min + contrarreloj",
+      "exercise_duration_min_minutes": 180,
+      "dose_text": "90 g/h",
+      "dose_value": 90,
+      "dose_unit": "g/h",
+      "frequency": "cada 20 min",
+      "timing_context": ["during"],
+      "timing_details": "Ingesta durante el ejercicio en tomas cada 20 min",
+      "timing_evidence_strength": "moderate",
+      "conditions": { "min_exercise_minutes": 120, "intensity": ["moderate"] },
+      "outcome": "tiempo de contrarreloj",
+      "effect_direction": "neutral",
+      "statistical_significance": "not_significant",
+      "effect_size": "diferencia media -0.8 % (IC95 % -2.1 a 0.5) (ficticio)",
+      "effect_size_value": -0.8,
+      "effect_size_metric": "% diferencia media",
+      "result_summary": "No se observaron diferencias significativas en el tiempo de contrarreloj frente a glucosa isocalórica (ficticio).",
+      "practical_interpretation": "En este protocolo la formulación no mejoró el rendimiento frente a glucosa isocalórica.",
+      "limitations": "Muestra pequeña, solo hombres, financiación de la industria.",
+      "evidence_strength": "B",
+      "conflict_of_interest_notes": "Estudio financiado por fabricante; el resultado neutro se registra igualmente.",
+      "review_status": "draft",
+      "chunk_keys": ["methods-protocol", "results-time-trial"]
+    },
+    {
+      "claim_key": "gi-tolerance",
+      "claim_type": "safety",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "population": "ciclistas entrenados",
+      "sample_size": 12,
+      "sex": "male",
+      "training_status": "trained",
+      "sport": "cycling",
+      "timing_context": ["during"],
+      "timing_evidence_strength": "limited",
+      "outcome": "malestar gastrointestinal",
+      "effect_direction": "positive",
+      "statistical_significance": "significant",
+      "result_summary": "Menor puntuación de malestar gastrointestinal con la formulación 1:0.8 (ficticio).",
+      "limitations": "Escala de síntomas autorreportada.",
+      "evidence_strength": "C",
+      "review_status": "draft",
+      "chunk_keys": ["results-gi"]
+    },
+    {
+      "claim_key": "late-nausea",
+      "claim_type": "safety",
+      "ingredient": "carbohydrate",
+      "population": "ciclistas entrenados",
+      "sample_size": 12,
+      "timing_context": ["during"],
+      "timing_evidence_strength": "not_assessed",
+      "dose_text": "90 g/h",
+      "outcome": "náuseas en la fase final",
+      "effect_direction": "negative",
+      "statistical_significance": "significant",
+      "result_summary": "Mayor incidencia de náuseas en la fase final con 90 g/h en ambas condiciones (ficticio).",
+      "evidence_strength": "C",
+      "review_status": "draft",
+      "chunk_keys": ["results-gi"]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 25,
+      "relation_type": "formulation",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "claim_key": "tt-performance",
+      "relevance": 0.5,
+      "rationale": "El producto declara maltodextrina:fructosa 1:0.8; el ensayo estudió la formulación, no el producto."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "catalog_version": "1.0",
+  "description": "Formulaciones (combinaciones definidas de ingredientes) que pueden ser objeto de estudio con independencia del producto.",
+  "formulations": [
+    {
+      "code": "maltodextrin_fructose_1_0_8",
+      "display_name": "Maltodextrina:fructosa 1:0.8",
+      "description": "Carbohidratos de doble fuente en proporción 1:0.8 (maltodextrina:fructosa).",
+      "ingredients": [
+        { "ingredient": "maltodextrin", "ratio_part": 1 },
+        { "ingredient": "fructose", "ratio_part": 0.8 }
+      ]
+    }
+  ]
+}
