@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-go-hydro-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — GO Hydro Tablets (current EU product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/eu/go-hydro-tablets-sis",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current Berry serving: 0.87 g salt and 345 mg sodium per tablet; current product is not zero-calorie (about 7–9 kcal depending on page/flavour)."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha actual de GO Hydro Berry declara por tableta aproximadamente 0.87 g de sal y 345 mg de sodio. La ficha actual también muestra una pequeña cantidad de energía, por lo que 'Zero calories' debe tratarse como descriptor comercial obsoleto/no ingrediente, no como composición normalizable.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "hydro-berry-sodium",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 36,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual de GO Hydro Berry declara 345 mg de sodio por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "sodium",
+      "dose_text": "345 mg por tableta",
+      "dose_value": 345,
+      "dose_unit": "mg"
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 36,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Coincidencia directa con GO Hydro Berry; el descriptor 'Zero calories' del catálogo no es un ingrediente y no coincide con la ficha actual."
+    }
+  ],
+  "product_ingredients": []
+}

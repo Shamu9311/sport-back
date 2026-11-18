@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-go-electrolyte-powder-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — GO Electrolyte Powder (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/sis-go-electrolyte-powder",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current page: 36 g carbohydrate and approx. 237–239 mg sodium, 150 mg potassium, 28.1 mg magnesium per 40 g serving depending on flavour. Catalog flavour records contain materially different electrolyte values."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha actual de GO Electrolyte Powder declara 36 g de carbohidratos por 40 g. Según sabor, aproximadamente 237–239 mg de sodio, 150 mg de potasio y 28.1 mg de magnesio por porción; también contiene calcio. Los valores difieren de algunos registros de sabores del catálogo.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: el fabricante indica uso antes o durante el ejercicio y recomienda mezclar 40 g en 500 ml de agua.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "go-electrolyte-carbs",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 8,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 36 g de carbohidratos por porción de 40 g.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "carbohydrate",
+      "dose_text": "36 g por 40 g",
+      "dose_value": 36,
+      "dose_unit": "g"
+    },
+    {
+      "claim_key": "go-electrolyte-pre-during",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 8,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica que GO Electrolyte puede utilizarse antes o durante el ejercicio.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "pre",
+        "during"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 8,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Coincidencia directa con el producto genérico GO Electrolyte Powder del catálogo."
+    }
+  ],
+  "product_ingredients": []
+}

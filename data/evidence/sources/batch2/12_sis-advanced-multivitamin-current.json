@@ -1,0 +1,206 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-advanced-multivitamin-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — Advanced Multivitamin (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/shop-sis/health-supplements/advanced-multivitamin",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Official table lists individual vitamins/minerals, enabling replacement of generic 'B-complex' with explicitly declared B vitamins. Suggested use is 1 tablet daily with food, but manufacturer timing must not independently enable RAG timing."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha oficial actual de Advanced Multivitamin declara, entre otros, vitamina B1 1.1 mg, niacina 16 mg NE, vitamina B6 1.4 mg, ácido fólico 400 µg, vitamina B12 2.5 µg, biotina 50 µg y ácido pantoténico 6 mg por tableta. La tabla actual no muestra una cantidad de riboflavina/B2.",
+      "content_kind": "own_summary",
+      "heading": "Vitaminas B declaradas"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: el fabricante indica una tableta diaria con comida, además de una dieta equilibrada. Esta instrucción no debe convertirse en elegibilidad científica para daily_chronic sin respaldo del corpus científico.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "multi-b1",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 1.1 mg de vitamina B1 por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "thiamin",
+      "dose_text": "1.1 mg por tableta",
+      "dose_value": 1.1,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "multi-niacin",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 16 mg NE de niacina por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "niacin",
+      "dose_text": "16 mg NE por tableta",
+      "dose_value": 16,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "multi-b6",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 1.4 mg de vitamina B6 por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient_name_raw": "vitamin_b6",
+      "dose_text": "1.4 mg de vitamina B6",
+      "dose_value": 1.4,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "multi-folate",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 400 µg de ácido fólico por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient_name_raw": "folic_acid",
+      "dose_text": "400 µg de ácido fólico",
+      "dose_value": 400,
+      "dose_unit": "ug"
+    },
+    {
+      "claim_key": "multi-b12",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 2.5 µg de vitamina B12 por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient_name_raw": "vitamin_b12",
+      "dose_text": "2.5 µg de vitamina B12",
+      "dose_value": 2.5,
+      "dose_unit": "ug"
+    },
+    {
+      "claim_key": "multi-biotin",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 50 µg de biotina por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient_name_raw": "biotin",
+      "dose_text": "50 µg de biotina",
+      "dose_value": 50,
+      "dose_unit": "ug"
+    },
+    {
+      "claim_key": "multi-pantothenic",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 6 mg de ácido pantoténico por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient_name_raw": "pantothenic_acid",
+      "dose_text": "6 mg de ácido pantoténico",
+      "dose_value": 6,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "multi-manufacturer-daily",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 47,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica una tableta diaria con comida, además de una dieta equilibrada.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "daily_chronic"
+      ],
+      "frequency": "1 tableta al día, con comida",
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ],
+      "timing_details": "Instrucción de fabricante; no debe habilitar daily_chronic sin respaldo científico."
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 47,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Coincidencia directa con Advanced Multivitamin; permite sustituir el texto genérico 'B-complex' por micronutrientes explícitamente declarados, sin inventar riboflavina/B2."
+    }
+  ],
+  "product_ingredients": []
+}

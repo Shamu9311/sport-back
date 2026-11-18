@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.0",
+  "catalog_version": "1.1",
   "description": "Catálogo normalizado de ingredientes/componentes. 'aliases' se usa para reconocer el texto de other_components y de las fuentes. Incluye macronutrientes (carbohydrate, protein) para enlazar guías de ingesta.",
   "ingredients": [
     { "code": "carbohydrate", "display_name": "Carbohidratos", "category": "macronutrient", "aliases": ["carbohydrate", "carbohydrates", "carbohidratos", "carbs", "cho"] },
@@ -29,6 +29,11 @@
     { "code": "thiamin", "display_name": "Tiamina (B1)", "category": "vitamin", "aliases": ["thiamin", "thiamine", "tiamina"] },
     { "code": "riboflavin", "display_name": "Riboflavina (B2)", "category": "vitamin", "aliases": ["riboflavin", "riboflavina"] },
     { "code": "niacin", "display_name": "Niacina (B3)", "category": "vitamin", "aliases": ["niacin", "niacina"] },
+    { "code": "vitamin_b6", "display_name": "Vitamina B6 (piridoxina)", "category": "vitamin", "aliases": ["vitamin b6", "vitamina b6", "pyridoxine", "piridoxina"] },
+    { "code": "folic_acid", "display_name": "Ácido fólico (B9)", "category": "vitamin", "aliases": ["folic acid", "ácido fólico", "acido folico"] },
+    { "code": "vitamin_b12", "display_name": "Vitamina B12 (cobalamina)", "category": "vitamin", "aliases": ["vitamin b12", "vitamina b12", "cobalamin", "cobalamina"] },
+    { "code": "biotin", "display_name": "Biotina (B7)", "category": "vitamin", "aliases": ["biotin", "biotina"] },
+    { "code": "pantothenic_acid", "display_name": "Ácido pantoténico (B5)", "category": "vitamin", "aliases": ["pantothenic acid", "ácido pantoténico", "acido pantotenico"] },
     { "code": "iron", "display_name": "Hierro", "category": "mineral", "aliases": ["iron", "hierro"] },
     { "code": "zinc", "display_name": "Zinc", "category": "mineral", "aliases": ["zinc"] },
     { "code": "creatine_monohydrate", "display_name": "Creatina monohidrato", "category": "other", "aliases": ["creatine", "creatine monohydrate", "creatina", "creatina monohidrato"] },

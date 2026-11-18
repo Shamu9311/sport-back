@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-beta-fuel-80-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — BETA Fuel 80 (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/shop-sis/all-products/beta-fuel-80",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current page: 82 g serving gives 80 g carbohydrate; salt 0 g. Catalog record uses per-100 g carbohydrate basis and a sodium value of 0.8, so do not overwrite automatically."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha actual de BETA Fuel 80 usa una porción de 82 g de polvo que aporta 80 g de carbohidratos y declara 0 g de sal. Ingredientes principales: maltodextrina y fructosa.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: el fabricante indica mezclar un sobre en 600 ml de agua y beber poco a poco durante ejercicio prolongado; un sobre por hora o combinado con otros productos BETA para alcanzar objetivos horarios de carbohidrato.",
+      "content_kind": "own_summary",
+      "heading": "Uso actual"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "beta80-carbs",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 17,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 80 g de carbohidratos por porción de 82 g.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "carbohydrate",
+      "dose_text": "80 g por porción de 82 g",
+      "dose_value": 80,
+      "dose_unit": "g"
+    },
+    {
+      "claim_key": "beta80-during",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 17,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica usar BETA Fuel 80 durante ejercicio prolongado.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "during"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 17,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Coincidencia de familia/nombre; la base del dato de carbohidratos y el valor de sal del catálogo difieren de la ficha actual, por lo que requiere decisión de versión antes de parchear.",
+      "notes": "version_mismatch"
+    }
+  ],
+  "product_ingredients": []
+}

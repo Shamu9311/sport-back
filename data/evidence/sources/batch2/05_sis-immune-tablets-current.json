@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-immune-tablets-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — IMMUNE Tablets (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/orange-immune-tablets",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Official page: 0.9 g salt per tablet, 200 mg vitamin C, 2.5 mg iron. Page explicitly states salt = total sodium × 2.5, enabling a derived sodium value of 360 mg per tablet."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha oficial de IMMUNE declara por tableta 0.9 g de sal, 200 mg de vitamina C y 2.5 mg de hierro. La propia ficha especifica que la sal declarada equivale al contenido total de sodio multiplicado por 2.5; por tanto, 0.9 g de sal corresponde a 0.36 g (360 mg) de sodio.",
+      "content_kind": "own_summary",
+      "heading": "Composición y conversión sal-sodio"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: el fabricante indica disolver una tableta en 500 ml de agua y consumir hasta una tableta al día junto con una dieta equilibrada y estilo de vida saludable.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "immune-vitamin-c",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 16,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 200 mg de vitamina C por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "vitamin_c",
+      "dose_text": "200 mg por tableta",
+      "dose_value": 200,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "immune-iron",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 16,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 2.5 mg de hierro por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "iron",
+      "dose_text": "2.5 mg por tableta",
+      "dose_value": 2.5,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "immune-sodium-derived",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 16,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial declara 0.9 g de sal y especifica sal = sodio total × 2.5; esto equivale a 360 mg de sodio por tableta.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "sodium",
+      "dose_text": "360 mg de sodio derivados de 0.9 g de sal / 2.5",
+      "dose_value": 360,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "immune-manufacturer-daily",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 16,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante permite hasta una tableta al día, disuelta en 500 ml de agua.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "daily_chronic"
+      ],
+      "frequency": "hasta 1 tableta al día (disuelta en 500 ml de agua)",
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ],
+      "timing_details": "Instrucción del fabricante; no debe habilitar por sí sola el timing científico daily_chronic."
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 16,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Coincidencia fuerte con el registro auditado: 200 mg vitamina C, 2.5 mg hierro y texto 'Sodio 0.9g' que corresponde en realidad a sal según la ficha oficial."
+    }
+  ],
+  "product_ingredients": []
+}

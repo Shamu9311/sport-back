@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-rego-rapid-recovery-plus-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — REGO Rapid Recovery+ (official range page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/eu/rego-recovery-range-sis",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Official page describes 38 g carbohydrate, 24 g protein, BCAA, 5 g L-glutamine and an additional 2 g leucine; intended post-exercise use. No exact salt value exposed in this page."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio de la página oficial de gama: REGO Rapid Recovery+ contiene 38 g de carbohidratos, 24 g de proteína, BCAA, 5 g de L-glutamina y 2 g adicionales de leucina; la página no expone un valor de sal utilizable para resolver el dato de sodio del catálogo.",
+      "content_kind": "own_summary",
+      "heading": "Composición declarada"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: SiS indica que REGO Rapid Recovery+ está diseñado para consumirse después de ejercicio prolongado o intenso y dentro de aproximadamente 30 minutos tras finalizar.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "current-regoplus-composition",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 12,
+      "effect_direction": "not_applicable",
+      "result_summary": "La página oficial declara 38 g de carbohidratos, 24 g de proteína, BCAA, 5 g de L-glutamina y 2 g adicionales de leucina.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ]
+    },
+    {
+      "claim_key": "current-regoplus-post",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 12,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica uso postejercicio, especialmente tras sesiones prolongadas o intensas.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "post"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ],
+      "timing_details": "Dentro de aproximadamente 30 min de finalizar, según la página oficial de gama."
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 12,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Correspondencia por nombre de producto. La ficha oficial actual contradice el texto del catálogo que dice 4 g de leucina, por lo que la corrección requiere confirmación de versión.",
+      "notes": "current_source_says_2g_leucine"
+    }
+  ],
+  "product_ingredients": []
+}

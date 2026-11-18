@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-beta-fuel-nootropics-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — BETA Fuel + Nootropics (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/beta-fuel-nootropics-pack",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official product is Apple/Lemon & Lime with 200 mg caffeine, 250 mg citicoline, 1 g taurine, 200 mg L-theanine. Catalog Raspberry/Mango variants cannot be assumed equivalent; another SiS pack page also shows a conflicting 75 mg caffeine statement."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha oficial actual de BETA Fuel + Nootropics declara 40 g de carbohidratos, 1:0.8 maltodextrina:fructosa, 200 mg de cafeína, 250 mg de citicolina Cognizin®, 1 g de L-taurina y 200 mg de L-teanina por gel. Los sabores actuales mostrados son Apple y Lemon & Lime.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: el fabricante limita el producto a una porción al día y lo posiciona para las fases finales del ejercicio de resistencia prolongado. Estas son instrucciones de fabricante, no evidencia independiente de eficacia.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "nootropics-caffeine-current",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 5,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 200 mg de cafeína por gel.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "caffeine",
+      "dose_text": "200 mg por gel",
+      "dose_value": 200,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "nootropics-citicoline-current",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 5,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 250 mg de citicolina Cognizin® por gel.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "citicoline",
+      "dose_text": "250 mg por gel",
+      "dose_value": 250,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "nootropics-taurine-current",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 5,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 1 g de L-taurina por gel.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "taurine",
+      "dose_text": "1 g por gel",
+      "dose_value": 1,
+      "dose_unit": "g"
+    },
+    {
+      "claim_key": "nootropics-theanine-current",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 5,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 200 mg de L-teanina por gel.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "theanine",
+      "dose_text": "200 mg por gel",
+      "dose_value": 200,
+      "dose_unit": "mg"
+    },
+    {
+      "claim_key": "nootropics-current-use",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 5,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica un máximo de una porción al día y su uso en fases tardías de ejercicio prolongado.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "during"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ],
+      "timing_details": "Instrucción del fabricante; no habilita timing por sí sola."
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 5,
+      "relation_type": "manufacturer_specification",
+      "rationale": "El registro genérico BETA Fuel + Nootropics coincide con la formulación oficial actual."
+    }
+  ],
+  "product_ingredients": []
+}

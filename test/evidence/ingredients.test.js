@@ -1,8 +1,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import pool from '../../config/db.js';
 import { normalizeProducts, loadCatalogs, parseOtherComponents, buildAliasIndex } from '../../scripts/lib/ingredientNormalizer.js';
 import { loadProductsForNormalization } from '../../scripts/lib/ingredientStore.js';
 import { resetEvidenceAndIngredients, normalizeCatalog, withClient } from './helpers.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('Migración 008 y normalización de ingredientes', () => {
   let normalization;
@@ -103,6 +108,36 @@ describe('Migración 008 y normalización de ingredientes', () => {
       WHERE product_id = 2 AND ingredient_id = (SELECT ingredient_id FROM ingredients WHERE code = 'caffeine')`);
     expect(Number(manual[0].amount)).toBe(80);
   }, 240000); // ~250 escrituras por ejecución contra la BD remota de test
+
+  it('migración 012: las 5 vitaminas B coinciden exactamente con ingredients.json', async () => {
+    const codes = ['vitamin_b6', 'folic_acid', 'vitamin_b12', 'biotin', 'pantothenic_acid'];
+    const json = loadCatalogs().ingredients.filter((i) => codes.includes(i.code));
+    expect(json.map((i) => i.code).sort()).toEqual([...codes].sort());
+    expect(json.some((i) => i.code === 'riboflavin')).toBe(false); // B2 ya existía; no se duplica
+
+    // Ejecuta el SQL de la migración sobre una tabla temporal con la misma estructura y compara
+    const sql = fs.readFileSync(path.resolve(__dirname, '../../db/migrations/012_vitamin_b_codes.sql'), 'utf8')
+      .replace(/INSERT INTO ingredients\b/, 'INSERT INTO pg_temp.ingredients_012');
+    const rows = await withClient(async (c) => {
+      await c.query('BEGIN');
+      try {
+        await c.query('CREATE TEMP TABLE ingredients_012 (LIKE ingredients INCLUDING ALL) ON COMMIT DROP');
+        await c.query(sql);
+        return (await c.query('SELECT code, display_name, aliases, category, is_active FROM pg_temp.ingredients_012')).rows;
+      } finally {
+        await c.query('ROLLBACK');
+      }
+    });
+    expect(rows).toHaveLength(5);
+    for (const j of json) {
+      expect(rows.find((r) => r.code === j.code)).toEqual({
+        code: j.code, display_name: j.display_name, aliases: j.aliases, category: j.category, is_active: true,
+      });
+    }
+    // Y quedan en la BD tras normalizar el catálogo
+    const { rows: db } = await pool.query(`SELECT count(*)::int n FROM ingredients WHERE code = ANY($1) AND is_active`, [codes]);
+    expect(db[0].n).toBe(5);
+  });
 
   it('una cantidad sin unidad es rechazada por la base de datos', async () => {
     await expect(pool.query(`INSERT INTO product_ingredients (product_id, ingredient_id, amount, data_source)

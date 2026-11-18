@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-beta-fuel-chews-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — BETA Fuel Energy Chews (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/eu/beta-fuel-energy-chews-sis",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current page: 60 g serving, 46 g carbohydrate, 0.11 g salt. Catalog record has different per-100 g / per-unit values."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha actual de BETA Fuel Energy Chews declara por porción de 60 g: 46 g de carbohidratos y 0.11 g de sal; por 100 g: 76 g de carbohidratos y 0.18 g de sal.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: SiS recomienda los BETA Fuel Energy Chews durante ejercicio prolongado para contribuir a los objetivos de carbohidratos.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "beta-chews-carbs",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 18,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual declara 46 g de carbohidratos por porción de 60 g.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "carbohydrate",
+      "dose_text": "46 g por porción de 60 g",
+      "dose_value": 46,
+      "dose_unit": "g"
+    },
+    {
+      "claim_key": "beta-chews-during",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 18,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica consumo durante ejercicio prolongado.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "during"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 18,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Misma familia BETA Fuel Energy Chews; los valores de porción y nutrición actuales difieren del catálogo, por lo que no se parchean automáticamente.",
+      "notes": "version_mismatch"
+    }
+  ],
+  "product_ingredients": []
+}

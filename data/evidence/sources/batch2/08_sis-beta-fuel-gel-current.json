@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-beta-fuel-gel-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — BETA Fuel Energy Gel (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/shop-sis/all-products/beta-fuel-gel-pack",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current BETA Fuel Gel page: 40 g carbohydrate per 60 ml, maltodextrin:fructose 1:0.8. Orange is exact current flavour; catalog Strawberry differs from current Strawberry & Lime wording."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha actual de BETA Fuel Energy Gel declara 40 g de carbohidratos por 60 ml y una formulación dual-source maltodextrina:fructosa 1:0.8. La página muestra Orange, Strawberry & Lime y Neutral.",
+      "content_kind": "own_summary",
+      "heading": "Composición y formulación"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: el fabricante indica 1–3 geles por hora durante ejercicio de resistencia prolongado para contribuir a un objetivo de 80–120 g/h de carbohidratos.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "beta-gel-ratio-p25",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 25,
+      "effect_direction": "not_applicable",
+      "result_summary": "El BETA Fuel Gel actual utiliza una formulación maltodextrina:fructosa 1:0.8 y aporta 40 g de carbohidratos por gel.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ],
+      "ingredient": "carbohydrate",
+      "dose_text": "40 g por 60 ml",
+      "dose_value": 40,
+      "dose_unit": "g"
+    },
+    {
+      "claim_key": "beta-gel-during-p25",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 25,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante indica consumo durante ejercicio prolongado.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "during"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 25,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Orange figura explícitamente en la ficha oficial actual."
+    }
+  ],
+  "product_ingredients": []
+}

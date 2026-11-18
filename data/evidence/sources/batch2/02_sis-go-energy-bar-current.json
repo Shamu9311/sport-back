@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-go-energy-bar-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — GO Energy Bar Mini (current product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/eu/shop-sis/energy-hydration/go-energy-bars/go-energy-mini-30-bar",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official page: serving 40 g, 25–26 g carbohydrate depending on flavour, 0.1 g salt. Catalog review row references 45 g serving."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha oficial actual de GO Energy Bar Mini usa porciones de 40 g y, según sabor, declara aproximadamente 25–26 g de carbohidratos y 0.1 g de sal. El registro auditado usa 45 g, por lo que existe discrepancia de versión/tamaño.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual y discrepancia de versión"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "current-energy-bar-spec",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 7,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial actual usa 40 g por bar, con aproximadamente 25–26 g de carbohidratos y 0.1 g de sal, según sabor.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ]
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 7,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Misma familia GO Energy Bar; el tamaño de porción actual difiere del catálogo y no se usa para sobrescribir valores automáticamente.",
+      "notes": "version_mismatch"
+    }
+  ],
+  "product_ingredients": []
+}

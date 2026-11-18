@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.1",
+  "source": {
+    "source_key": "sis-rego-rapid-recovery-current",
+    "source_type": "manufacturer_specification",
+    "title": "Science in Sport — REGO Rapid Recovery (current EU product page)",
+    "organization": "Science in Sport (SiS)",
+    "url": "https://www.scienceinsport.com/eu/rego-rapid-recovery-chocolate-1-6kg",
+    "accessed_date": "2026-11-17",
+    "review_status": "draft",
+    "language": "en",
+    "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official EU page: serving 50 g, 20 g protein, 22 g carbohydrate, 1.0 g salt. Catalog review row references 70 g serving."
+  },
+  "chunks": [
+    {
+      "chunk_key": "current-spec",
+      "section": "product_information",
+      "content": "Resumen propio: la ficha oficial EU actual de REGO Rapid Recovery declara por 50 g: 20 g de proteína, 22 g de carbohidratos y 1.0 g de sal. El catálogo auditado registra una porción de 70 g.",
+      "content_kind": "own_summary",
+      "heading": "Composición actual"
+    },
+    {
+      "chunk_key": "current-use",
+      "section": "product_information",
+      "content": "Resumen propio: SiS presenta REGO Rapid Recovery como producto de recuperación para después de sesiones prolongadas o intensas; sus páginas actuales indican consumo inmediatamente después del ejercicio o dentro de aproximadamente 30 minutos.",
+      "content_kind": "own_summary",
+      "heading": "Uso del fabricante"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "current-rego-spec",
+      "claim_type": "composition",
+      "product_specific": true,
+      "product_id": 11,
+      "effect_direction": "not_applicable",
+      "result_summary": "La ficha oficial EU actual declara 20 g de proteína, 22 g de carbohidratos y 1.0 g de sal por 50 g.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-spec"
+      ]
+    },
+    {
+      "claim_key": "current-rego-post",
+      "claim_type": "usage_instruction",
+      "product_specific": true,
+      "product_id": 11,
+      "effect_direction": "not_applicable",
+      "result_summary": "El fabricante posiciona REGO Rapid Recovery para recuperación inmediatamente después de ejercicio prolongado o intenso.",
+      "statistical_significance": "not_tested",
+      "review_status": "draft",
+      "timing_context": [
+        "post"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "chunk_keys": [
+        "current-use"
+      ],
+      "timing_details": "Inmediatamente después; otras páginas oficiales de SiS mencionan dentro de ~30 min."
+    }
+  ],
+  "product_relations": [
+    {
+      "product_id": 11,
+      "relation_type": "manufacturer_specification",
+      "rationale": "Misma familia REGO Rapid Recovery. La porción actual (50 g) difiere del registro del catálogo (70 g), por lo que no se parchean cantidades automáticamente.",
+      "notes": "version_mismatch"
+    }
+  ],
+  "product_ingredients": []
+}
