@@ -2,12 +2,31 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sport-tesis.local/schemas/evidence-manifest.v1.schema.json",
   "title": "Manifiesto de evidencia científica (una fuente por archivo)",
-  "description": "Contrato v1 de ingesta. Los campos desconocidos se OMITEN; nunca se rellenan con valores inventados. Referencias por claves naturales (ingredient/formulation code, product_id del catálogo, chunk_key, claim_key).",
+  "description": "Contrato v1.1 de ingesta (compatible con v1.0). Los campos desconocidos se OMITEN; nunca se rellenan con valores inventados. Referencias por claves naturales (ingredient/formulation code, product_id del catálogo, chunk_key, claim_key). v1.1: usage_instruction puede ser una orientación general sin sujeto solo en fuentes scientific_evidence/official_guideline.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "source"],
+  "allOf": [
+    {
+      "description": "v1.1: en una especificación del fabricante, usage_instruction exige producto y/o ingrediente",
+      "if": {
+        "properties": { "source": { "properties": { "source_type": { "const": "manufacturer_specification" } }, "required": ["source_type"] } },
+        "required": ["source"]
+      },
+      "then": {
+        "properties": {
+          "claims": {
+            "items": {
+              "if": { "properties": { "claim_type": { "const": "usage_instruction" } }, "required": ["claim_type"] },
+              "then": { "anyOf": [{ "required": ["product_id"] }, { "required": ["ingredient"] }] }
+            }
+          }
+        }
+      }
+    }
+  ],
   "properties": {
-    "schema_version": { "const": "1.0" },
+    "schema_version": { "enum": ["1.0", "1.1"] },
     "source": { "$ref": "#/$defs/source" },
     "chunks": { "type": "array", "items": { "$ref": "#/$defs/chunk" }, "default": [] },
     "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" }, "default": [] },
@@ -189,8 +208,8 @@
           "then": { "required": ["product_id"] }
         },
         {
-          "description": "El claim debe tener un sujeto (ingrediente, formulación o producto), salvo guías generales",
-          "if": { "properties": { "claim_type": { "not": { "enum": ["dosage_guideline", "timing_guideline"] } } } },
+          "description": "El claim debe tener un sujeto (ingrediente, formulación o producto), salvo guías generales y usage_instruction general (v1.1; en el fabricante lo restringe la regla de nivel superior)",
+          "if": { "properties": { "claim_type": { "not": { "enum": ["dosage_guideline", "timing_guideline", "usage_instruction"] } } } },
           "then": { "anyOf": [{ "required": ["ingredient"] }, { "required": ["formulation"] }, { "required": ["product_id"] }] }
         }
       ]

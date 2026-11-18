@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "ais-electrolyte-supplements",
+    "source_type": "official_framework",
+    "title": "AIS Sports Supplement Framework: Electrolyte Replacement Supplements (Group A)",
+    "url": "https://www.ausport.gov.au/ais/nutrition/supplements/group_a/sports-foods2/electrolyte-supplement2",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "organization": "Australian Institute of Sport",
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: marco oficial AIS Group A para reposición dirigida de electrolitos en escenarios deportivos específicos.",
+    "notes": "Página oficial AIS y recurso de electrolitos consultados el 2026-11-13. Verificado contra el PDF oficial AIS/ASC descargado el 2026-11-17; el PDF no declara de forma visible un año de publicación, por lo que se omite el campo year. Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "electrolyte-timing",
+      "section": "recommendation",
+      "content": "AIS plantea electrolitos antes del ejercicio en calor cuando se busca hiperhidratación, durante sesiones con pérdidas grandes o prolongadas de sodio/sudor y después de pérdidas moderadas-grandes para acelerar la rehidratación.",
+      "content_kind": "own_summary",
+      "heading": "Situaciones y timing"
+    },
+    {
+      "chunk_key": "sodium-caveat",
+      "section": "recommendation",
+      "content": "AIS indica que no existe consenso sobre la dosis óptima de sodio durante ejercicio; presenta como referencia general aproximadamente 500–700 mg de sodio/L, con individualización para grandes pérdidas y evitando sobrehidratación.",
+      "content_kind": "own_summary",
+      "heading": "Sodio durante ejercicio"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "ais-sodium-contextual-timing",
+      "claim_type": "timing_guideline",
+      "effect_direction": "positive",
+      "result_summary": "AIS respalda la reposición de electrolitos en situaciones específicas: preejercicio en calor/hiperhidratación, durante pérdidas altas o prolongadas de sudor y postejercicio para rehidratación tras déficits moderados-grandes.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "sodium",
+      "timing_context": [
+        "pre",
+        "during",
+        "post"
+      ],
+      "timing_details": "Uso condicionado por ambiente, duración, tasa de sudoración, contenido de sodio del sudor y magnitud del déficit hídrico.",
+      "timing_evidence_strength": "moderate",
+      "conditions": {
+        "notes": "Especialmente relevante en calor, sudoración prolongada o pérdidas elevadas; individualizar."
+      },
+      "outcome": "reposición de electrolitos y retención de fluidos",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "electrolyte-timing"
+      ]
+    },
+    {
+      "claim_key": "ais-sodium-500-700mgl",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "mixed",
+      "result_summary": "AIS señala que no existe consenso sobre una dosis óptima universal de sodio durante ejercicio; cita ~500–700 mg/L de líquido como referencia general que debe individualizarse.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "sodium",
+      "dose_text": "Referencia general ~500–700 mg de sodio/L de líquido; sin consenso sobre dosis óptima universal",
+      "dose_value": 500,
+      "dose_value_max": 700,
+      "dose_unit": "mg/L",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante ejercicio cuando existe una necesidad contextual de reposición.",
+      "timing_evidence_strength": "limited",
+      "outcome": "reposición de sodio durante ejercicio",
+      "limitations": "No existe consenso de dosis óptima; la necesidad depende de pérdidas individuales y estrategia de fluidos.",
+      "evidence_strength": "C",
+      "chunk_keys": [
+        "sodium-caveat"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

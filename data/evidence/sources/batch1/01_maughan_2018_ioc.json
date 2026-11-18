@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "maughan-2018-ioc-supplements",
+    "source_type": "consensus",
+    "title": "IOC consensus statement: dietary supplements and the high-performance athlete",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5867441/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1136/bjsports-2018-099027",
+    "pmid": "29540367",
+    "year": 2018,
+    "journal": "British Journal of Sports Medicine",
+    "organization": "International Olympic Committee",
+    "open_access": true,
+    "license": "CC BY-NC 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: consenso internacional con revisión explícita de la evidencia y protocolos por suplemento.",
+    "funding": "No specific grant reported.",
+    "industry_funded": false,
+    "conflict_of_interest": "Competing interests: none declared in the article.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "summary-performance-supplements",
+      "section": "summary",
+      "content": "El consenso IOC concluye que solo un número reducido de suplementos dispone de evidencia suficientemente sólida para beneficios de rendimiento en escenarios específicos; entre ellos cafeína y creatina. Recomienda valorar contexto, seguridad, riesgo antidopaje y probar estrategias en entrenamiento antes de competir.",
+      "content_kind": "own_summary",
+      "heading": "Resumen propio"
+    },
+    {
+      "chunk_key": "caffeine-protocol",
+      "section": "recommendation",
+      "content": "Para cafeína, el consenso resume protocolos de 3–6 mg/kg aproximadamente 60 minutos antes del ejercicio; también contempla dosis menores antes y durante el ejercicio, especialmente junto con carbohidratos, en contextos de resistencia.",
+      "content_kind": "own_summary",
+      "heading": "Protocolo de cafeína"
+    },
+    {
+      "chunk_key": "creatine-protocol",
+      "section": "recommendation",
+      "content": "Para creatina monohidrato, el consenso describe una fase de carga de aproximadamente 20 g/día, divididos en cuatro dosis, durante 5–7 días, seguida de 3–5 g/día para mantener elevadas las reservas de creatina.",
+      "content_kind": "own_summary",
+      "heading": "Protocolo de creatina"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "ioc-caffeine-pre",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "El IOC considera 3–6 mg/kg de cafeína alrededor de 60 min antes del ejercicio como un protocolo respaldado para escenarios deportivos específicos.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "caffeine",
+      "dose_text": "3–6 mg/kg de masa corporal, ~60 min antes del ejercicio",
+      "dose_value": 3,
+      "dose_value_max": 6,
+      "dose_unit": "mg/kg",
+      "dose_relative": "mg/kg",
+      "timing_context": [
+        "pre"
+      ],
+      "timing_details": "Aproximadamente 60 minutos antes del ejercicio.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "rendimiento deportivo",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "caffeine-protocol"
+      ]
+    },
+    {
+      "claim_key": "ioc-caffeine-before-during-low-dose",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "El consenso también describe dosis menores de cafeína (<3 mg/kg, alrededor de 200 mg) administradas antes y durante ejercicio de resistencia, habitualmente junto con carbohidratos.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "caffeine",
+      "dose_text": "<3 mg/kg (~200 mg) antes y durante ejercicio de resistencia",
+      "dose_value_max": 3,
+      "dose_unit": "mg/kg",
+      "dose_relative": "mg/kg",
+      "timing_context": [
+        "pre",
+        "during"
+      ],
+      "timing_details": "Antes y/o durante el ejercicio de resistencia.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "rendimiento de resistencia",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "caffeine-protocol"
+      ]
+    },
+    {
+      "claim_key": "ioc-creatine-maintenance",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "El IOC describe un protocolo de carga de creatina de aproximadamente 20 g/día durante 5–7 días seguido de mantenimiento diario de 3–5 g/día para elevar y mantener las reservas musculares.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "creatine_monohydrate",
+      "dose_text": "~20 g/día durante 5–7 días, seguido de 3–5 g/día",
+      "frequency": "diaria",
+      "duration_protocol": "Carga aproximada de 5–7 días seguida de mantenimiento",
+      "timing_context": [
+        "daily_chronic"
+      ],
+      "timing_details": "Uso crónico diario; no depende de una única sesión.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "reservas de creatina y adaptación al entrenamiento",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "creatine-protocol"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

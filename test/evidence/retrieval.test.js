@@ -33,7 +33,7 @@ describe('Embeddings y recuperación de evidencia (servicio aislado)', () => {
     await review('example-guideline-issn-caffeine');
     await review('example-scientific-crossover-trial');
     // el ejemplo del fabricante queda en draft
-  });
+  }, 240000); // normalización (~250 consultas) + ingesta + embeddings contra la BD remota de test
 
   it('todos los chunks tienen embedding de 768 dimensiones, norma > 0 y modelo registrado', async () => {
     const { rows } = await pool.query(`SELECT vector_dims(embedding) d, vector_norm(embedding) n, embedding_model m,

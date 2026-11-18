@@ -27,6 +27,7 @@ Con `NODE_ENV=test`, el backend y los scripts usan **siempre** `TEST_DATABASE_UR
 | `008_ingredients.sql` | `ingredients`, `formulations`, `formulation_ingredients`, `product_ingredients`, `product_formulations` e `ingredient_mapping_review` (`other_components` se conserva) |
 | `009_evidence_model_v2.sql` | Recrea la capa de evidencia: `evidence_sources` (con `source_category`), `evidence_chunks` (`vector(768)`), `evidence_claims` (`timing_context[]`), `evidence_claim_chunks`, `product_evidence` (`relation_type`), `evidence_ingest_runs` y los triggers de reglas |
 | `010_evidence_views_and_rls.sql` | Vistas `v_retrievable_evidence_chunks`, `v_retrievable_claims`, `v_claim_timing_support` y `v_product_evidence_derived`; RLS en las tablas nuevas |
+| `011_usage_instruction_general.sql` | Contrato v1.1: `usage_instruction` sin sujeto solo en fuentes `scientific_evidence`/`official_guideline`; en el fabricante exige producto y/o ingrediente (CHECK `evidence_claims_subject` + trigger `evidence_claims_rules`) |
 
 La capa de evidencia **no participa en las recomendaciones** (`USE_EVIDENCE_RAG=false`). El contrato, la escala de niveles A–D, las reglas de timing y el flujo de curación están en [`data/evidence/README.md`](../data/evidence/README.md).
 

@@ -36,7 +36,7 @@ export function readManifest(filePath) {
   };
 }
 
-/** Validación estructural (JSON Schema v1). */
+/** Validación estructural (JSON Schema v1.1, compatible con manifiestos 1.0). */
 export function validateSchema(manifest) {
   const validate = getValidator();
   if (validate(manifest)) return [];
@@ -47,6 +47,16 @@ export function validateSchema(manifest) {
 
 const MANUFACTURER_CLAIM_TYPES = new Set(['composition', 'usage_instruction']);
 const GUIDELINE_TYPES = new Set(['consensus', 'position_stand', 'guideline', 'official_framework']);
+/** Tipos de claim que pueden no tener sujeto. usage_instruction solo fuera del fabricante (v1.1). */
+const SUBJECTLESS_CLAIM_TYPES = new Set(['dosage_guideline', 'timing_guideline', 'usage_instruction']);
+const GENERAL_USAGE_CATEGORIES = new Set(['scientific_evidence', 'official_guideline']);
+
+/** Misma derivación que la columna generada evidence_sources.source_category. */
+export function sourceCategoryOf(sourceType) {
+  if (GUIDELINE_TYPES.has(sourceType)) return 'official_guideline';
+  if (sourceType === 'manufacturer_specification') return 'manufacturer_specification';
+  return 'scientific_evidence';
+}
 
 /**
  * Reglas de negocio y referencias.
@@ -110,6 +120,19 @@ export function validateBusinessRules(manifest, ctx = {}) {
       errors.push(`${where}: una especificación del fabricante solo admite claims composition/usage_instruction (recibido ${claim.claim_type})`);
     }
     if (isManufacturer && claim.sample_size) errors.push(`${where}: sample_size no aplica a una especificación del fabricante`);
+
+    // Sujeto del claim (contrato v1.1)
+    const hasSubject = Boolean(claim.ingredient || claim.formulation || claim.product_id);
+    if (!hasSubject && !SUBJECTLESS_CLAIM_TYPES.has(claim.claim_type)) {
+      errors.push(`${where}: un claim ${claim.claim_type} requiere ingredient, formulation o product_id`);
+    }
+    if (claim.claim_type === 'usage_instruction' && !hasSubject
+        && !GENERAL_USAGE_CATEGORIES.has(sourceCategoryOf(source.source_type))) {
+      errors.push(`${where}: usage_instruction sin sujeto solo se admite en fuentes scientific_evidence u official_guideline`);
+    }
+    if (isManufacturer && claim.claim_type === 'usage_instruction' && !claim.product_id && !claim.ingredient) {
+      errors.push(`${where}: un usage_instruction del fabricante debe indicar product_id y/o ingredient`);
+    }
 
     const timing = claim.timing_context || ['not_specified'];
     if (timing.includes('not_specified') && timing.length > 1) {

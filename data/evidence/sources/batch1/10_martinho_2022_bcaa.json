@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "martinho-2022-bcaa-systematic-review",
+    "source_type": "systematic_review",
+    "title": "Oral Branched-Chain Amino Acids Supplementation in Athletes: A Systematic Review",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9571679/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.3390/nu14194002",
+    "pmid": "36235655",
+    "year": 2022,
+    "journal": "Nutrients",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A1: revisión sistemática con búsqueda explícita en varias bases y evaluación de riesgo de sesgo; incluyó 24 estudios.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "review-findings",
+      "section": "summary",
+      "content": "La revisión sistemática incluyó 24 estudios en atletas/personas entrenadas. Los beneficios de BCAA sobre rendimiento y composición corporal fueron pequeños o despreciables; en deportes de resistencia los resultados fueron inconsistentes. En estudios de resistencia muscular se observó reducción del dolor muscular en algunos protocolos.",
+      "content_kind": "own_summary",
+      "heading": "Hallazgos principales"
+    },
+    {
+      "chunk_key": "review-limitations",
+      "section": "discussion",
+      "content": "Los protocolos de BCAA variaron considerablemente y muchos estudios no controlaron o reportaron la ingesta total diaria de proteína, por lo que los beneficios deben interpretarse con cautela.",
+      "content_kind": "own_summary",
+      "heading": "Limitaciones"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "bcaa-performance-bodycomp",
+      "claim_type": "efficacy",
+      "effect_direction": "neutral",
+      "result_summary": "En la revisión sistemática, los beneficios de BCAA sobre rendimiento y composición corporal fueron en general despreciables; en deportes de resistencia los resultados fueron inconsistentes.",
+      "statistical_significance": "not_reported",
+      "review_status": "reviewed",
+      "ingredient": "bcaa",
+      "population": "atletas y personas con entrenamiento regular",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "outcome": "rendimiento y composición corporal",
+      "limitations": "Alta heterogeneidad de protocolos; ingesta proteica total frecuentemente no controlada.",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "review-findings",
+        "review-limitations"
+      ]
+    },
+    {
+      "claim_key": "bcaa-muscle-soreness",
+      "claim_type": "efficacy",
+      "effect_direction": "positive",
+      "result_summary": "Algunos estudios con ejercicio de fuerza/resistencia dentro de la revisión observaron atenuación del dolor muscular postejercicio con BCAA, aunque el contexto y los protocolos fueron heterogéneos.",
+      "statistical_significance": "not_reported",
+      "review_status": "reviewed",
+      "ingredient": "bcaa",
+      "population": "participantes entrenados en protocolos de fuerza/resistencia incluidos en la revisión",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "outcome": "dolor muscular postejercicio",
+      "limitations": "No permite establecer una pauta de timing universal y la ingesta proteica total fue un confusor frecuente.",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "review-findings",
+        "review-limitations"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

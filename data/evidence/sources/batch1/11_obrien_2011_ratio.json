@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "obrien-rowlands-2011-fructose-maltodextrin",
+    "source_type": "crossover_trial",
+    "title": "Fructose-maltodextrin ratio in a carbohydrate-electrolyte solution differentially affects exogenous carbohydrate oxidation rate, gut comfort, and performance",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/21071509/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1152/ajpgi.00419.2010",
+    "pmid": "21071509",
+    "year": 2011,
+    "journal": "American Journal of Physiology-Gastrointestinal and Liver Physiology",
+    "peer_reviewed": true,
+    "evidence_level": "B",
+    "evidence_level_rationale": "B1: ensayo aleatorizado, doble ciego y cruzado en 10 ciclistas entrenados; comparó varias proporciones de fructosa:maltodextrina y control.",
+    "funding": "Institute of Food, Nutrition, and Human Health Post-Graduate Project Grant and income from services of the Exercise Physiology and Metabolism Laboratory, Massey University.",
+    "industry_funded": false,
+    "conflict_of_interest": "Authors declared no conflicts of interest.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "protocol",
+      "section": "methods",
+      "content": "Diez ciclistas realizaron 150 min al 50% de potencia pico y luego un test incremental hasta agotamiento. Ingerían agua o soluciones con distintas proporciones fructosa:maltodextrina; la condición 0.8 utilizó 0.8 g/min de fructosa y 1.0 g/min de maltodextrina (1.8 g/min total).",
+      "content_kind": "own_summary",
+      "heading": "Protocolo"
+    },
+    {
+      "chunk_key": "results",
+      "section": "results",
+      "content": "La proporción 0.8 mostró la mayor oxidación exógena de carbohidratos entre las proporciones evaluadas y el menor deterioro del confort gastrointestinal. El trabajo también reportó ventajas de potencia pico frente a algunas condiciones, pero los resultados son específicos del protocolo y la muestra.",
+      "content_kind": "own_summary",
+      "heading": "Resultados"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "ratio-0_8-oxidation",
+      "claim_type": "efficacy",
+      "effect_direction": "positive",
+      "result_summary": "En este ensayo de 10 ciclistas, la proporción fructosa:maltodextrina 0.8:1 produjo una mayor tasa media de oxidación exógena de carbohidratos que las proporciones 0.5:1 y 1.25:1 evaluadas.",
+      "statistical_significance": "not_reported",
+      "review_status": "reviewed",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "population": "ciclistas",
+      "sample_size": 10,
+      "sex": "not_reported",
+      "training_status": "trained",
+      "sport": "cycling",
+      "exercise_context": "150 min al 50% de potencia pico seguidos de test incremental hasta agotamiento",
+      "exercise_duration": "150 min + test incremental",
+      "exercise_duration_min_minutes": 150,
+      "dose_text": "1.8 g/min de carbohidratos totales (0.8 g/min fructosa + 1.0 g/min maltodextrina)",
+      "dose_value": 1.8,
+      "dose_unit": "g/min",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Ingesta durante el ejercicio.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "oxidación exógena de carbohidratos",
+      "limitations": "Muestra pequeña y protocolo de laboratorio en ciclistas; la formulación no implica automáticamente equivalencia de todos los productos comerciales.",
+      "evidence_strength": "B",
+      "chunk_keys": [
+        "protocol",
+        "results"
+      ]
+    },
+    {
+      "claim_key": "ratio-0_8-gut-comfort",
+      "claim_type": "safety",
+      "effect_direction": "positive",
+      "result_summary": "La condición con proporción 0.8 presentó el menor deterioro del confort gastrointestinal entre las proporciones evaluadas en este protocolo de alta ingesta de carbohidratos.",
+      "statistical_significance": "not_reported",
+      "review_status": "reviewed",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "population": "ciclistas",
+      "sample_size": 10,
+      "training_status": "trained",
+      "sport": "cycling",
+      "dose_text": "1.8 g/min de carbohidratos totales",
+      "dose_value": 1.8,
+      "dose_unit": "g/min",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante ejercicio prolongado.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "confort gastrointestinal",
+      "limitations": "Resultado específico del protocolo y de una muestra de 10 ciclistas.",
+      "evidence_strength": "B",
+      "chunk_keys": [
+        "protocol",
+        "results"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "peeling-2023-vitamins-minerals-athletes",
+    "source_type": "narrative_review",
+    "title": "Considerations for the Consumption of Vitamin and Mineral Supplements in Athlete Populations",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10721676/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1007/s40279-023-01875-4",
+    "pmid": "37358750",
+    "year": 2023,
+    "journal": "Sports Medicine",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "C",
+    "evidence_level_rationale": "C1: revisión narrativa de alta relevancia clínica/deportiva, pero no revisión sistemática según el diseño publicado.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "food-first",
+      "section": "summary",
+      "content": "La revisión enfatiza un enfoque food-first y desaconseja usar vitaminas/minerales de manera indiscriminada. La suplementación debe responder a evaluación de necesidades, dieta y estado biológico/clínico del atleta.",
+      "content_kind": "own_summary",
+      "heading": "Principio food-first"
+    },
+    {
+      "chunk_key": "targeted-supplementation",
+      "section": "summary",
+      "content": "Cuando existe deficiencia o riesgo específico, la intervención puede requerir suplementación dirigida y considerar dosis, timing, interacciones con alimentos/fármacos, duración y monitorización; estos factores varían según el nutriente.",
+      "content_kind": "own_summary",
+      "heading": "Suplementación dirigida"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "micronutrients-food-first",
+      "claim_type": "usage_instruction",
+      "effect_direction": "not_applicable",
+      "result_summary": "La revisión establece como objetivo principal un enfoque food-first (\"food first but not always food only\"): obtener vitaminas y minerales principalmente de alimentos y bebidas; los suplementos deben complementar la dieta, no sustituirla.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient_name_raw": "vitaminas y minerales (micronutrientes en general)",
+      "population": "atletas",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "practical_interpretation": "Priorizar la corrección de la dieta y de la ingesta energética antes de recurrir a suplementos de micronutrientes.",
+      "evidence_strength": "C",
+      "chunk_keys": [
+        "food-first"
+      ]
+    },
+    {
+      "claim_key": "micronutrients-individual-assessment",
+      "claim_type": "usage_instruction",
+      "effect_direction": "not_applicable",
+      "result_summary": "Antes de intervenir, la revisión recomienda un marco estructurado de evaluación de los requerimientos energéticos, la dieta y el estado biológico/clínico del atleta; la suplementación se justifica cuando el contexto individual lo requiere (p. ej., deficiencia confirmada que la dieta sola no corrige, ingesta energética comprometida, dietas restrictivas o baja absorción) y debe considerar dosis, timing, alimentos co-ingeridos e interacciones con fármacos, que son específicos de cada nutriente.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient_name_raw": "vitaminas y minerales (micronutrientes en general)",
+      "population": "atletas",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "practical_interpretation": "La necesidad de suplementar se decide caso a caso tras la evaluación; la revisión no fija dosis ni momentos generales para todos los micronutrientes.",
+      "conditions": {
+        "notes": "Dosis, timing, co-ingesta e interacciones dependen del nutriente y del contexto individual; la revisión no establece reglas generales."
+      },
+      "evidence_strength": "C",
+      "chunk_keys": [
+        "food-first",
+        "targeted-supplementation"
+      ]
+    },
+    {
+      "claim_key": "micronutrients-no-automatic-supplementation",
+      "claim_type": "usage_instruction",
+      "effect_direction": "not_applicable",
+      "result_summary": "La revisión desaconseja el uso indiscriminado de suplementos de vitaminas y minerales: su utilidad debe considerarse cuidadosamente antes del uso y basarse en una evaluación individual, por lo que no respalda la suplementación automática sin una necesidad identificada.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient_name_raw": "suplementos de vitaminas y minerales, incluidos multivitamínicos",
+      "population": "atletas sin necesidad o deficiencia identificada",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "practical_interpretation": "Como aplicación de este principio general: no recomendar un multivitamínico diario por defecto y reservar la suplementación de micronutrientes para necesidades identificadas tras la evaluación.",
+      "limitations": "La revisión no evalúa productos multivitamínicos de forma específica; la conclusión sobre multivitamínicos se deriva de su principio general contra la suplementación indiscriminada y de la evaluación individual previa.",
+      "evidence_strength": "C",
+      "chunk_keys": [
+        "food-first"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

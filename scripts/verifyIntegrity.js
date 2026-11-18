@@ -113,6 +113,10 @@ export async function runIntegrityChecks(client, { dump = null } = {}) {
       ['not_applicable solo en composición/instrucciones',
        `SELECT COUNT(*)::int n FROM evidence_claims
         WHERE (claim_type IN ('composition','usage_instruction')) <> (effect_direction = 'not_applicable')`],
+      ['usage_instruction sin sujeto solo en evidencia científica/guía oficial (v1.1)',
+       `SELECT COUNT(*)::int n FROM evidence_claims c JOIN evidence_sources s USING (source_id)
+        WHERE c.claim_type = 'usage_instruction' AND s.source_category = 'manufacturer_specification'
+          AND c.ingredient_id IS NULL AND c.product_id IS NULL`],
       ['product_ingredients con ingredientes activos',
        `SELECT COUNT(*)::int n FROM product_ingredients pi JOIN ingredients i USING (ingredient_id) WHERE NOT i.is_active`],
     ];

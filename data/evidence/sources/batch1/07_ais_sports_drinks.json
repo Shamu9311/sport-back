@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "ais-sports-drinks",
+    "source_type": "official_framework",
+    "title": "AIS Sports Supplement Framework: Sports Drinks (Group A)",
+    "url": "https://www.ausport.gov.au/ais/nutrition/supplements/group_a/sports-foods2/sports-drink",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "organization": "Australian Institute of Sport",
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: marco oficial AIS Group A con recomendaciones de uso y composición de bebidas deportivas basadas en evidencia.",
+    "notes": "Página oficial AIS consultada el 2026-11-13; verificar fecha exacta de última actualización al revisar el PDF actual. Verificado contra el PDF oficial AIS/ASC descargado el 2026-11-17; el PDF no declara de forma visible un año de publicación, por lo que se omite el campo year. Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "drink-use",
+      "section": "recommendation",
+      "content": "AIS describe las bebidas deportivas como una opción para combinar combustible, líquido y electrolitos antes, durante y después del ejercicio. Su composición típica combina carbohidratos y sodio, ajustándose al objetivo de hidratación y combustible.",
+      "content_kind": "own_summary",
+      "heading": "Uso de bebidas deportivas"
+    },
+    {
+      "chunk_key": "drink-carb-targets",
+      "section": "recommendation",
+      "content": "AIS resume objetivos de carbohidratos según duración: pequeñas cantidades en 45–75 min, 30–60 g/h en ejercicio de resistencia de 1–2.5 h y hasta 90 g/h en eventos >2.5–3 h. Para ingestas altas, los productos con múltiples carbohidratos transportables pueden favorecer absorción, oxidación y tolerancia gastrointestinal.",
+      "content_kind": "own_summary",
+      "heading": "Objetivos de carbohidratos"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "ais-drink-timing",
+      "claim_type": "timing_guideline",
+      "effect_direction": "positive",
+      "result_summary": "AIS considera las bebidas deportivas útiles antes, durante y después del ejercicio para cubrir de forma combinada necesidades de combustible, líquido y electrolitos, siempre según contexto individual.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "carbohydrate",
+      "timing_context": [
+        "pre",
+        "during",
+        "post"
+      ],
+      "timing_details": "Puede formar parte de la preparación preejercicio, del plan durante la actividad y de la recuperación.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "hidratación y disponibilidad de carbohidratos",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "drink-use"
+      ]
+    },
+    {
+      "claim_key": "ais-drink-carb-1-2_5h",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "Para ejercicio de resistencia de 1–2.5 h, AIS sitúa el objetivo de carbohidratos durante el ejercicio en 30–60 g/h.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "carbohydrate",
+      "dose_text": "30–60 g/h para ejercicio de resistencia de 1–2.5 h",
+      "dose_value": 30,
+      "dose_value_max": 60,
+      "dose_unit": "g/h",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante ejercicio de resistencia prolongado.",
+      "timing_evidence_strength": "moderate",
+      "conditions": {
+        "min_exercise_minutes": 60,
+        "max_exercise_minutes": 150
+      },
+      "outcome": "aporte de combustible durante ejercicio",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "drink-carb-targets"
+      ]
+    },
+    {
+      "claim_key": "ais-drink-carb-ultra",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "Para eventos de ultra-resistencia de duración >2.5–3 h, AIS indica objetivos de carbohidratos de hasta 90 g/h; las ingestas altas se favorecen con múltiples carbohidratos transportables.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "carbohydrate",
+      "dose_text": "Hasta 90 g/h en eventos >2.5–3 h",
+      "dose_value_max": 90,
+      "dose_unit": "g/h",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante ejercicio de resistencia prolongado.",
+      "timing_evidence_strength": "moderate",
+      "conditions": {
+        "min_exercise_minutes": 150,
+        "notes": "AIS expresa el umbral como >2.5–3 h; individualizar y practicar tolerancia."
+      },
+      "outcome": "aporte de combustible durante ejercicio",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "drink-carb-targets"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

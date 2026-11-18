@@ -1,0 +1,116 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "jager-2017-issn-protein",
+    "source_type": "position_stand",
+    "title": "International Society of Sports Nutrition Position Stand: protein and exercise",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5477153/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1186/s12970-017-0177-8",
+    "pmid": "28642676",
+    "year": 2017,
+    "journal": "Journal of the International Society of Sports Nutrition",
+    "organization": "International Society of Sports Nutrition",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: posición oficial basada en revisión crítica de la evidencia sobre proteína en personas físicamente activas.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "daily-protein",
+      "section": "recommendation",
+      "content": "ISSN resume que 1.4–2.0 g de proteína/kg/día es suficiente para la mayoría de personas que entrenan y que una estrategia de distribución regular a lo largo del día es importante.",
+      "content_kind": "own_summary",
+      "heading": "Ingesta diaria"
+    },
+    {
+      "chunk_key": "serving-timing",
+      "section": "recommendation",
+      "content": "Como recomendación general, ISSN propone aproximadamente 0.25 g/kg o 20–40 g de proteína de alta calidad por toma, distribuida cada 3–4 h; tanto la ingesta pre como post entrenamiento puede aportar beneficios.",
+      "content_kind": "own_summary",
+      "heading": "Dosis por toma y timing"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "protein-daily-1_4-2_0",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "Para la mayoría de individuos que realizan ejercicio, ISSN considera suficiente una ingesta total diaria de proteína de 1.4–2.0 g/kg/día.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "protein",
+      "dose_text": "1.4–2.0 g/kg/día",
+      "dose_value": 1.4,
+      "dose_value_max": 2.0,
+      "dose_unit": "g/kg/day",
+      "dose_relative": "g/kg/day",
+      "frequency": "diaria",
+      "timing_context": [
+        "daily_chronic"
+      ],
+      "timing_details": "Objetivo total diario.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "balance proteico y soporte de adaptación al ejercicio",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "daily-protein"
+      ]
+    },
+    {
+      "claim_key": "protein-serving-20-40",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "La posición propone aproximadamente 20–40 g de proteína de alta calidad por toma (o ~0.25 g/kg), idealmente distribuidas cada 3–4 h.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "protein",
+      "dose_text": "20–40 g por toma o ~0.25 g/kg",
+      "dose_value": 20,
+      "dose_value_max": 40,
+      "dose_unit": "g",
+      "frequency": "cada 3–4 h",
+      "timing_context": [
+        "daily_chronic",
+        "flexible"
+      ],
+      "timing_details": "Distribución regular durante el día.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "estimulación de síntesis proteica muscular",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "serving-timing"
+      ]
+    },
+    {
+      "claim_key": "protein-pre-post",
+      "claim_type": "timing_guideline",
+      "effect_direction": "positive",
+      "result_summary": "La proteína ingerida antes o después del ejercicio puede contribuir a la respuesta anabólica; el timing óptimo es flexible y depende de tolerancia y de la ingesta total diaria.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "protein",
+      "timing_context": [
+        "pre",
+        "post",
+        "flexible"
+      ],
+      "timing_details": "Beneficios descritos tanto con ingesta pre como post entrenamiento.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "síntesis proteica muscular",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "serving-timing"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

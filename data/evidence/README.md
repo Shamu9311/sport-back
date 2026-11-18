@@ -35,11 +35,11 @@ node scripts/verifyIntegrity.js
 
 Para escribir en la BD principal, los scripts exigen `--confirm`. Los manifiestos `example-*` solo se aceptan en la BD de test o con `--allow-examples`.
 
-## 3. Contrato del manifiesto (v1)
+## 3. Contrato del manifiesto (v1.1)
 
 | Bloque | Contenido |
 |---|---|
-| `schema_version` | `"1.0"` |
+| `schema_version` | `"1.0"` o `"1.1"` (v1.1 es compatible: los manifiestos 1.0 siguen siendo válidos) |
 | `source` | Metadatos de la fuente. Obligatorios: `source_key`, `source_type`, `title` y al menos uno de `doi`, `pmid`, `url` |
 | `chunks[]` | Fragmentos curados: `chunk_key`, `section`, `content`; opcionales `heading`, `page`, `paragraph`, `content_kind` |
 | `claims[]` | Afirmaciones estructuradas: `claim_key`, `claim_type`, `effect_direction`, `result_summary`, más los campos que la fuente informe |
@@ -65,6 +65,19 @@ Reglas clave:
 Una **especificación del fabricante** es válida para composición, cantidades, ingredientes, información nutricional e instrucciones oficiales. **Nunca es evidencia independiente de eficacia.**
 - Solo admite claims `composition` y `usage_instruction`; lo exigen el schema, un trigger y `verifyIntegrity`.
 - Su `evidence_level` puede quedar **vacío**, incluso cuando está `reviewed`.
+
+### 3.1.1 Sujeto del claim (v1.1)
+
+Cada claim se refiere a un **sujeto**: `ingredient`, `formulation` o `product_id`. Excepciones:
+
+| `claim_type` | ¿Puede no tener sujeto? |
+|---|---|
+| `dosage_guideline`, `timing_guideline` | Sí (guías generales) |
+| `usage_instruction` | **Solo** si la fuente es `scientific_evidence` u `official_guideline`: orientaciones prácticas generales (p. ej. *food-first*, evaluación individual antes de suplementar) |
+| `usage_instruction` en `manufacturer_specification` | **No**: exige `product_id` y/o `ingredient` (una formulación sola no basta) |
+| `efficacy`, `safety`, `mechanism`, `composition` | No |
+
+Lo aplican el JSON Schema, las reglas de `evidenceManifest.js`, el CHECK `evidence_claims_subject` + el trigger `evidence_claims_rules` (migración 011) y `verifyIntegrity`. Un `usage_instruction` general no evalúa efectos (`effect_direction: not_applicable`) y no justifica momentos de consumo.
 
 ### 3.2 `effect_direction`
 

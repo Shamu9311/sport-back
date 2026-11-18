@@ -1,0 +1,144 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "hearris-2022-120g-cho-forms",
+    "source_type": "crossover_trial",
+    "title": "13C-glucose-fructose labelling reveals comparable exogenous CHO oxidation during exercise when consuming 120 g/h in fluid, gel, jelly chew or co-ingestion",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/35446596/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1152/japplphysiol.00091.2022",
+    "pmid": "35446596",
+    "year": 2022,
+    "journal": "Journal of Applied Physiology",
+    "peer_reviewed": true,
+    "evidence_level": "C",
+    "evidence_level_rationale": "B1 por diseño aleatorizado de medidas repetidas, degradado a C por imprecisión (n=9) según la escala operativa de la tesis.",
+    "funding": "Research grant from Science in Sport PLC.",
+    "industry_funded": true,
+    "conflict_of_interest": "The study was funded by Science in Sport PLC. JPM, LMB and TS disclosed consultancy relationships with Science in Sport; additional funding/consultancy relationships were disclosed by several authors. One author was affiliated with Science in Sport PLC.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "protocol",
+      "section": "methods",
+      "content": "Nueve hombres entrenados consumieron 120 g de carbohidratos por hora durante 180 min de ciclismo, usando una proporción 1:0.8 de maltodextrina o glucosa:fructosa, en forma de bebida, gel, chew o combinación; después realizaron una prueba de capacidad de ejercicio.",
+      "content_kind": "own_summary",
+      "heading": "Protocolo"
+    },
+    {
+      "chunk_key": "oxidation-tolerance",
+      "section": "results",
+      "content": "Las tasas máximas de oxidación exógena y la eficiencia fueron similares entre bebida, gel, chew y combinación. A pesar de 120 g/h, se reportaron síntomas gastrointestinales mínimos.",
+      "content_kind": "own_summary",
+      "heading": "Oxidación y tolerancia"
+    },
+    {
+      "chunk_key": "exercise-capacity",
+      "section": "results",
+      "content": "No hubo diferencias significativas de capacidad de ejercicio entre las distintas formas de entrega de carbohidratos; por ello el estudio no demuestra superioridad de gel frente a bebida, chew o combinación.",
+      "content_kind": "own_summary",
+      "heading": "Capacidad de ejercicio"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "120g-forms-oxidation-neutral",
+      "claim_type": "efficacy",
+      "effect_direction": "neutral",
+      "result_summary": "Con 120 g/h de carbohidratos en proporción 1:0.8, las tasas máximas de oxidación exógena fueron comparables entre bebida, gel, chew y combinación.",
+      "statistical_significance": "not_significant",
+      "review_status": "reviewed",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "population": "hombres entrenados",
+      "sample_size": 9,
+      "sex": "male",
+      "training_status": "trained",
+      "sport": "cycling",
+      "exercise_context": "180 min de ciclismo al 95% del umbral de lactato seguidos de prueba de capacidad",
+      "exercise_duration": "180 min + prueba de capacidad",
+      "exercise_duration_min_minutes": 180,
+      "dose_text": "120 g/h de carbohidratos",
+      "dose_value": 120,
+      "dose_unit": "g/h",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante 180 min de ejercicio.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "oxidación exógena de carbohidratos entre formas de entrega",
+      "limitations": "n=9, solo hombres entrenados; estudio financiado por Science in Sport; no prueba superioridad de una forma comercial.",
+      "evidence_strength": "C",
+      "conflict_of_interest_notes": "Estudio financiado por Science in Sport PLC; varios autores declararon relaciones de consultoría con SiS y un autor tenía afiliación con la empresa.",
+      "chunk_keys": [
+        "protocol",
+        "oxidation-tolerance"
+      ]
+    },
+    {
+      "claim_key": "120g-gi-tolerance",
+      "claim_type": "safety",
+      "effect_direction": "positive",
+      "result_summary": "En este protocolo, 120 g/h de carbohidratos en proporción 1:0.8 se asociaron con síntomas gastrointestinales mínimos en las distintas formas evaluadas.",
+      "statistical_significance": "not_reported",
+      "review_status": "reviewed",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "population": "hombres entrenados",
+      "sample_size": 9,
+      "sex": "male",
+      "training_status": "trained",
+      "sport": "cycling",
+      "dose_text": "120 g/h",
+      "dose_value": 120,
+      "dose_unit": "g/h",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante ejercicio prolongado.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "síntomas gastrointestinales",
+      "limitations": "Muestra de 9 hombres entrenados; la tolerancia debe individualizarse y el estudio tuvo financiación de SiS.",
+      "evidence_strength": "C",
+      "conflict_of_interest_notes": "Estudio financiado por Science in Sport PLC; varios autores declararon relaciones de consultoría con SiS y un autor tenía afiliación con la empresa.",
+      "chunk_keys": [
+        "protocol",
+        "oxidation-tolerance"
+      ]
+    },
+    {
+      "claim_key": "120g-form-performance-neutral",
+      "claim_type": "efficacy",
+      "effect_direction": "neutral",
+      "result_summary": "No se observaron diferencias significativas en capacidad de ejercicio entre bebida, gel, chew y combinación cuando todas aportaban el mismo régimen de 120 g/h de carbohidratos.",
+      "statistical_significance": "not_significant",
+      "review_status": "reviewed",
+      "formulation": "maltodextrin_fructose_1_0_8",
+      "population": "hombres entrenados",
+      "sample_size": 9,
+      "sex": "male",
+      "training_status": "trained",
+      "sport": "cycling",
+      "dose_text": "120 g/h",
+      "dose_value": 120,
+      "dose_unit": "g/h",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante ejercicio prolongado.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "capacidad de ejercicio entre formas de entrega",
+      "limitations": "No demuestra superioridad de un formato; n=9 y financiación de SiS.",
+      "evidence_strength": "C",
+      "conflict_of_interest_notes": "Estudio financiado por Science in Sport PLC; varios autores declararon relaciones de consultoría con SiS y un autor tenía afiliación con la empresa.",
+      "chunk_keys": [
+        "exercise-capacity"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

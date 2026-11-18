@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "kreider-2017-issn-creatine",
+    "source_type": "position_stand",
+    "title": "International Society of Sports Nutrition position stand: safety and efficacy of creatine supplementation in exercise, sport, and medicine",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5469049/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1186/s12970-017-0173-z",
+    "pmid": "28615996",
+    "year": 2017,
+    "journal": "Journal of the International Society of Sports Nutrition",
+    "organization": "International Society of Sports Nutrition",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: posición oficial con revisión extensa de eficacia y seguridad de creatina.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "creatine-efficacy",
+      "section": "summary",
+      "content": "La posición concluye que creatina monohidrato aumenta las reservas intramusculares y cuenta con evidencia consistente de mejoras en capacidad de ejercicio de alta intensidad y adaptaciones al entrenamiento.",
+      "content_kind": "own_summary",
+      "heading": "Eficacia"
+    },
+    {
+      "chunk_key": "creatine-dosing",
+      "section": "recommendation",
+      "content": "Un protocolo rápido de saturación utiliza aproximadamente 0.3 g/kg/día durante 5–7 días seguido de 3–5 g/día; una alternativa es usar 3–5 g/día de forma sostenida, con aumento más gradual de las reservas.",
+      "content_kind": "own_summary",
+      "heading": "Dosis"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "creatine-high-intensity",
+      "claim_type": "efficacy",
+      "effect_direction": "positive",
+      "result_summary": "La posición ISSN considera creatina monohidrato una ayuda ergogénica eficaz para aumentar la capacidad de ejercicio de alta intensidad y favorecer adaptaciones al entrenamiento.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "creatine_monohydrate",
+      "population": "personas físicamente activas y atletas en la literatura revisada",
+      "frequency": "diaria",
+      "duration_protocol": "Fase de carga ~0.3 g/kg/día durante 5–7 días; mantenimiento 3–5 g/día posteriormente.",
+      "timing_context": [
+        "daily_chronic"
+      ],
+      "timing_details": "Los beneficios dependen del aumento sostenido de las reservas; no de una toma aislada inmediatamente antes de una sesión.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "capacidad de ejercicio de alta intensidad y adaptaciones al entrenamiento",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "creatine-efficacy"
+      ]
+    },
+    {
+      "claim_key": "creatine-loading-maintenance",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "La posición describe una estrategia de carga aproximada de 0.3 g/kg/día durante 5–7 días seguida de mantenimiento de 3–5 g/día; 3–5 g/día sin carga también eleva reservas de forma gradual.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "creatine_monohydrate",
+      "dose_text": "Carga ~0.3 g/kg/día por 5–7 días; mantenimiento 3–5 g/día",
+      "dose_value": 3,
+      "dose_value_max": 5,
+      "dose_unit": "g/day",
+      "frequency": "diaria",
+      "duration_protocol": "Uso crónico; fase de carga opcional",
+      "timing_context": [
+        "daily_chronic"
+      ],
+      "timing_details": "Consumo diario sostenido.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "aumento y mantenimiento de reservas musculares de creatina",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "creatine-dosing"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

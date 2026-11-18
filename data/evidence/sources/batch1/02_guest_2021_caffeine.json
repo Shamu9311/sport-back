@@ -1,0 +1,118 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "guest-2021-issn-caffeine",
+    "source_type": "position_stand",
+    "title": "International society of sports nutrition position stand: caffeine and exercise performance",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7777221/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1186/s12970-020-00383-4",
+    "pmid": "33388079",
+    "year": 2021,
+    "journal": "Journal of the International Society of Sports Nutrition",
+    "organization": "International Society of Sports Nutrition",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: posición oficial de sociedad científica basada en revisión crítica extensa de la literatura.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "position-summary",
+      "section": "summary",
+      "content": "La posición ISSN informa beneficios agudos de la cafeína para diversas modalidades, con la evidencia más consistente en resistencia aeróbica. Resume que 3–6 mg/kg mejora el rendimiento en muchos estudios, mientras dosis muy altas aumentan efectos adversos sin necesidad de mayor beneficio.",
+      "content_kind": "own_summary",
+      "heading": "Resumen de posición"
+    },
+    {
+      "chunk_key": "dose-timing",
+      "section": "recommendation",
+      "content": "La posición ISSN señala que 3–6 mg/kg es un rango ampliamente respaldado y que el momento más utilizado es aproximadamente 60 min antes del ejercicio. El momento óptimo depende de la forma de administración.",
+      "content_kind": "own_summary",
+      "heading": "Dosis y momento"
+    },
+    {
+      "chunk_key": "alternative-sources",
+      "section": "recommendation",
+      "content": "La posición reporta que fuentes alternativas de cafeína, incluidos geles y chews con cafeína, han mostrado mejoras de rendimiento principalmente en ejercicio aeróbico.",
+      "content_kind": "own_summary",
+      "heading": "Fuentes alternativas"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "caffeine-3-6mgkg-pre",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "La evidencia sintetizada por ISSN respalda de forma consistente dosis de 3–6 mg/kg para mejorar el rendimiento; ~60 min pre-ejercicio es el timing más utilizado, aunque depende de la forma de administración.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "caffeine",
+      "dose_text": "3–6 mg/kg de masa corporal",
+      "dose_value": 3,
+      "dose_value_max": 6,
+      "dose_unit": "mg/kg",
+      "dose_relative": "mg/kg",
+      "timing_context": [
+        "pre"
+      ],
+      "timing_details": "El timing más utilizado es ~60 min pre-ejercicio; puede variar según la fuente de cafeína.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "rendimiento físico",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "dose-timing"
+      ]
+    },
+    {
+      "claim_key": "caffeine-endurance-efficacy",
+      "claim_type": "efficacy",
+      "effect_direction": "positive",
+      "result_summary": "La resistencia aeróbica es una de las modalidades con beneficios más consistentes de cafeína, aunque la magnitud de respuesta varía entre individuos.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "caffeine",
+      "population": "adultos entrenados y no entrenados incluidos en la literatura revisada",
+      "sport": "endurance y otras modalidades",
+      "timing_context": [
+        "pre",
+        "flexible"
+      ],
+      "timing_details": "El uso pre-ejercicio es el más común; la forma de administración puede modificar el timing.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "rendimiento de resistencia aeróbica",
+      "limitations": "Variabilidad interindividual y heterogeneidad de protocolos.",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "position-summary"
+      ]
+    },
+    {
+      "claim_key": "caffeine-gels-chews",
+      "claim_type": "efficacy",
+      "effect_direction": "positive",
+      "result_summary": "La revisión identifica geles y chews con cafeína entre las formas alternativas que han mostrado beneficios, principalmente en ejercicio aeróbico.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "caffeine",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "outcome": "rendimiento, principalmente aeróbico",
+      "limitations": "El efecto depende de dosis, forma de administración y contexto.",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "alternative-sources"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

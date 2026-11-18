@@ -17,7 +17,7 @@ describe('Ingesta de evidencia (idempotencia, duplicados, relaciones)', () => {
   beforeAll(async () => {
     await resetEvidenceAndIngredients();
     await normalizeCatalog();
-  });
+  }, 240000); // ~250 consultas contra la BD remota de test
 
   it('dry-run valida y simula sin escribir nada', async () => {
     const results = await run(Object.values(EXAMPLE_FILES), { confirm: false });
@@ -151,6 +151,46 @@ describe('Ingesta de evidencia (idempotencia, duplicados, relaciones)', () => {
     await expect(pool.query(`INSERT INTO evidence_claims (source_id, claim_key, claim_type, product_id, outcome,
         effect_direction, result_summary) VALUES ($1, 'bad', 'efficacy', 4, 'rendimiento', 'positive', 'x')`, [m.source_id]))
       .rejects.toThrow(/fabricante/);
+  });
+
+  describe('BD (migración 011): usage_instruction general solo fuera del fabricante', () => {
+    // Cada caso se ejecuta en una transacción revertida: no altera los conteos del resto de pruebas.
+    const tryInsert = (sourceKey, claim) => withClient(async (c) => {
+      await c.query('BEGIN');
+      try {
+        const { rows: [s] } = await c.query('SELECT source_id FROM evidence_sources WHERE source_key = $1', [sourceKey]);
+        await c.query(`INSERT INTO evidence_claims (source_id, claim_key, claim_type, effect_direction, outcome,
+            result_summary, ingredient_id, product_id) VALUES ($1, 'test-011', $2, $3, $4, 'prueba', $5, $6)`,
+        [s.source_id, claim.type, claim.effect, claim.outcome ?? null, claim.ingredientId ?? null, claim.productId ?? null]);
+        return 'ok';
+      } finally {
+        await c.query('ROLLBACK');
+      }
+    });
+    const general = { type: 'usage_instruction', effect: 'not_applicable' };
+
+    it('1. acepta usage_instruction sin sujeto en una fuente scientific_evidence', async () => {
+      await expect(tryInsert('example-scientific-crossover-trial', general)).resolves.toBe('ok');
+    });
+
+    it('2. acepta usage_instruction sin sujeto en una fuente official_guideline', async () => {
+      await expect(tryInsert('example-guideline-issn-caffeine', general)).resolves.toBe('ok');
+    });
+
+    it('3. rechaza usage_instruction sin sujeto en una manufacturer_specification', async () => {
+      await expect(tryInsert('example-manufacturer-beta-fuel-gel', general))
+        .rejects.toThrow(/solo se admite en fuentes scientific_evidence u official_guideline/);
+      await expect(tryInsert('example-manufacturer-beta-fuel-gel', { ...general, productId: 4 })).resolves.toBe('ok');
+      await expect(tryInsert('example-manufacturer-beta-fuel-gel', { ...general, ingredientId: await ingredientId('carbohydrate') }))
+        .resolves.toBe('ok');
+    });
+
+    it('4. rechaza claims de eficacia sin sujeto (CHECK evidence_claims_subject)', async () => {
+      const efficacy = { type: 'efficacy', effect: 'positive', outcome: 'rendimiento' };
+      for (const key of ['example-scientific-crossover-trial', 'example-guideline-issn-caffeine']) {
+        await expect(tryInsert(key, efficacy)).rejects.toMatchObject({ code: '23514', constraint: 'evidence_claims_subject' });
+      }
+    });
   });
 
   it('la composición declarada por el fabricante queda trazable a su fuente', async () => {

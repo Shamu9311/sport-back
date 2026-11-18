@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "kerksick-2017-issn-nutrient-timing",
+    "source_type": "position_stand",
+    "title": "International society of sports nutrition position stand: nutrient timing",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5596471/",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "doi": "10.1186/s12970-017-0189-4",
+    "pmid": "28919842",
+    "year": 2017,
+    "journal": "Journal of the International Society of Sports Nutrition",
+    "organization": "International Society of Sports Nutrition",
+    "open_access": true,
+    "license": "CC BY 4.0",
+    "peer_reviewed": true,
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: posición oficial de sociedad científica centrada específicamente en timing de macronutrientes.",
+    "notes": "Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "carb-during",
+      "section": "recommendation",
+      "content": "La posición recomienda aproximadamente 30–60 g de carbohidratos por hora durante sesiones intensas prolongadas (>60 min), especialmente cuando superan ~70 min.",
+      "content_kind": "own_summary",
+      "heading": "Carbohidratos durante ejercicio"
+    },
+    {
+      "chunk_key": "rapid-glycogen",
+      "section": "recommendation",
+      "content": "Cuando se requiere restauración rápida de glucógeno con menos de 4 h de recuperación, se plantea una estrategia agresiva de carbohidratos de ~1.2 g/kg/h; combinar carbohidratos con proteína es otra estrategia descrita.",
+      "content_kind": "own_summary",
+      "heading": "Recuperación rápida"
+    },
+    {
+      "chunk_key": "protein-spacing",
+      "section": "recommendation",
+      "content": "La posición enfatiza cubrir la proteína total diaria con tomas espaciadas aproximadamente cada 3 h y señala 20–40 g como una cantidad capaz de maximizar la respuesta de síntesis proteica en muchos contextos.",
+      "content_kind": "own_summary",
+      "heading": "Distribución de proteína"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "carbohydrate-30-60-during",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "Para ejercicio intenso y prolongado, ISSN recomienda aproximadamente 30–60 g de carbohidrato por hora durante la sesión.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "carbohydrate",
+      "dose_text": "~30–60 g/h durante ejercicio >60 min",
+      "dose_value": 30,
+      "dose_value_max": 60,
+      "dose_unit": "g/h",
+      "timing_context": [
+        "during"
+      ],
+      "timing_details": "Durante toda la sesión prolongada.",
+      "timing_evidence_strength": "moderate",
+      "conditions": {
+        "min_exercise_minutes": 60,
+        "intensity": [
+          "high"
+        ]
+      },
+      "outcome": "disponibilidad de combustible y rendimiento",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "carb-during"
+      ]
+    },
+    {
+      "claim_key": "carbohydrate-rapid-post",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "Cuando hay menos de 4 h para recuperar glucógeno, la posición propone aproximadamente 1.2 g/kg/h de carbohidratos durante la recuperación temprana.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "carbohydrate",
+      "dose_text": "~1.2 g/kg/h cuando se requiere restauración rápida de glucógeno",
+      "dose_value": 1.2,
+      "dose_unit": "g/kg/h",
+      "dose_relative": "g/kg/h",
+      "timing_context": [
+        "post"
+      ],
+      "timing_details": "Recuperación postejercicio cuando el intervalo hasta la siguiente sesión es <4 h.",
+      "timing_evidence_strength": "moderate",
+      "conditions": {
+        "notes": "Aplicable cuando se requiere recuperación rápida de glucógeno (<4 h)."
+      },
+      "outcome": "resíntesis de glucógeno",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "rapid-glycogen"
+      ]
+    },
+    {
+      "claim_key": "protein-20-40-spaced",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "La posición recomienda priorizar la proteína total diaria, con tomas de aproximadamente 20–40 g espaciadas alrededor de cada 3 h.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "protein",
+      "dose_text": "20–40 g por toma, aproximadamente cada 3 h",
+      "dose_value": 20,
+      "dose_value_max": 40,
+      "dose_unit": "g",
+      "frequency": "aprox. cada 3 h",
+      "timing_context": [
+        "daily_chronic",
+        "flexible"
+      ],
+      "timing_details": "Distribuida a lo largo del día.",
+      "timing_evidence_strength": "moderate",
+      "outcome": "síntesis proteica muscular",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "protein-spacing"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}

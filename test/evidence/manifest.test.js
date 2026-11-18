@@ -151,6 +151,70 @@ describe('Contrato JSON v1 (schema + reglas)', () => {
   });
 });
 
+describe('Contrato v1.1: usage_instruction general (sin sujeto)', () => {
+  const generalUsage = (extra = {}) => ({
+    claim_key: 'general-usage',
+    claim_type: 'usage_instruction',
+    effect_direction: 'not_applicable',
+    result_summary: 'Orientación práctica general derivada de la fuente (prueba).',
+    timing_context: ['not_specified'],
+    ...extra,
+  });
+  const withClaim = (kind, claim, sourceOverrides = {}) => {
+    const m = clone(loadExample(kind));
+    Object.assign(m.source, sourceOverrides);
+    m.claims.push(claim);
+    return m;
+  };
+
+  it('1. usage_instruction general desde una revisión científica → válido', () => {
+    const m = withClaim('scientific', generalUsage(), { source_type: 'narrative_review' });
+    expect(errorsOf(m)).toEqual([]);
+  });
+
+  it('2. usage_instruction general desde una guía oficial → válido', () => {
+    const m = withClaim('guideline', generalUsage());
+    expect(m.source.source_type).toBe('position_stand');
+    expect(errorsOf(m)).toEqual([]);
+  });
+
+  it('3. usage_instruction sin sujeto desde el fabricante → inválido (schema y reglas)', () => {
+    const m = withClaim('manufacturer', generalUsage());
+    expect(validateSchema(m).length).toBeGreaterThan(0);
+    const rules = validateBusinessRules(m, ctx).errors.join();
+    expect(rules).toMatch(/usage_instruction sin sujeto solo se admite/);
+    expect(rules).toMatch(/fabricante debe indicar product_id y\/o ingredient/);
+  });
+
+  it('3b. en el fabricante basta producto o ingrediente, pero no solo una formulación', () => {
+    expect(errorsOf(withClaim('manufacturer', generalUsage({ product_id: 4 })))).toEqual([]);
+    expect(errorsOf(withClaim('manufacturer', generalUsage({ ingredient: 'carbohydrate' })))).toEqual([]);
+    const onlyFormulation = withClaim('manufacturer', generalUsage({ formulation: 'maltodextrin_fructose_1_0_8' }));
+    expect(validateSchema(onlyFormulation).length).toBeGreaterThan(0);
+    expect(validateBusinessRules(onlyFormulation, ctx).errors.join()).toMatch(/fabricante debe indicar/);
+  });
+
+  it('4. un claim de eficacia sin sujeto sigue siendo inválido (científica y guía)', () => {
+    const efficacy = {
+      claim_key: 'efficacy-no-subject', claim_type: 'efficacy', effect_direction: 'positive',
+      outcome: 'rendimiento', result_summary: 'Mejora el rendimiento (prueba).', statistical_significance: 'significant',
+    };
+    for (const [kind, overrides] of [['scientific', { source_type: 'narrative_review' }], ['guideline', {}]]) {
+      const m = withClaim(kind, efficacy, overrides);
+      expect(validateSchema(m).length).toBeGreaterThan(0);
+      expect(validateBusinessRules(m, ctx).errors.join()).toMatch(/requiere ingredient, formulation o product_id/);
+    }
+  });
+
+  it('acepta manifiestos con schema_version 1.0 y 1.1', () => {
+    const m = clone(loadExample('guideline'));
+    m.schema_version = '1.1';
+    expect(errorsOf(m)).toEqual([]);
+    m.schema_version = '2.0';
+    expect(errorsOf(m).length).toBeGreaterThan(0);
+  });
+});
+
 describe('Chunking', () => {
   it('conserva los fragmentos curados y calcula un hash estable', () => {
     const { rows } = prepareChunks(loadExample('scientific').chunks);

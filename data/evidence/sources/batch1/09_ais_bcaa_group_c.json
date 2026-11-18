@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "source_key": "ais-bcaa-group-c",
+    "source_type": "official_framework",
+    "title": "AIS Sports Supplement Framework: Branched-chain amino acids (BCAA) / Leucine — Group C",
+    "url": "https://www.ausport.gov.au/ais/nutrition/supplements/group_c",
+    "accessed_date": "2026-11-17",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-18T01:02:47.538Z",
+    "language": "en",
+    "organization": "Australian Institute of Sport",
+    "evidence_level": "A",
+    "evidence_level_rationale": "A2: clasificación oficial AIS basada en revisión de la evidencia; BCAA/Leucine se encuentran en Group C.",
+    "notes": "Clasificación Group C consultada el 2026-11-13; usar junto con la revisión sistemática de Martinho et al. para claims específicos. Verificado contra el PDF oficial AIS/ASC descargado el 2026-11-17; el PDF no declara de forma visible un año de publicación, por lo que se omite el campo year. Claims y metadatos revisados contra el PDF aportado por el usuario el 2026-11-17."
+  },
+  "chunks": [
+    {
+      "chunk_key": "group-c-summary",
+      "section": "recommendation",
+      "content": "AIS clasifica BCAA/Leucine en Group C: la evidencia científica no respalda un beneficio claro entre atletas o es insuficiente para orientar una recomendación informada. Su uso no se promueve dentro de programas de suplementación salvo evaluación específica.",
+      "content_kind": "own_summary",
+      "heading": "Clasificación Group C"
+    }
+  ],
+  "claims": [
+    {
+      "claim_key": "ais-bcaa-insufficient",
+      "claim_type": "efficacy",
+      "effect_direction": "insufficient",
+      "result_summary": "La clasificación AIS Group C indica que el respaldo científico para BCAA/Leucine en atletas es insuficiente o no convincente para recomendar su uso rutinario.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "bcaa",
+      "population": "atletas",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "outcome": "rendimiento, recuperación y adaptación",
+      "limitations": "La clasificación resume un cuerpo heterogéneo de literatura y no implica que todos los outcomes individuales sean nulos.",
+      "evidence_strength": "A",
+      "chunk_keys": [
+        "group-c-summary"
+      ]
+    }
+  ],
+  "product_relations": [],
+  "product_ingredients": []
+}
