@@ -1,6 +1,24 @@
 import { BaseModel } from './BaseModel.js';
 import { withTransaction } from '../config/db.js';
 
+/**
+ * Evidencia de una recomendación para mostrar al usuario: título, año, tipo, resumen y DOI/URL.
+ * No expone datos técnicos (similitud, score, embeddings).
+ */
+const EVIDENCE_JSON = `
+  COALESCE((
+    SELECT json_agg(json_build_object(
+             'source_id', s.source_id, 'title', s.title, 'year', s.year, 'source_type', s.source_type,
+             'source_category', s.source_category, 'summary', c.result_summary, 'doi', s.doi, 'url', s.url,
+             'role', re.role)
+           ORDER BY re.rank NULLS LAST, re.recommendation_evidence_id)
+      FROM (SELECT DISTINCT ON (x.claim_id, x.role) x.* FROM recommendation_evidence x
+             WHERE x.recommendation_id = r.recommendation_id AND x.role IN ('supports','caveat','usage_constraint')
+             ORDER BY x.claim_id, x.role, x.rank NULLS LAST) re
+      JOIN evidence_sources s ON s.source_id = re.source_id
+      LEFT JOIN evidence_claims c ON c.claim_id = re.claim_id
+  ), '[]'::json) AS evidence`;
+
 class Recommendation extends BaseModel {
   static tableName = 'recommendations';
   static primaryKey = 'recommendation_id';
@@ -15,7 +33,8 @@ class Recommendation extends BaseModel {
              r.consumption_timing,
              r.consumption_instructions,
              r.recommended_quantity,
-             r.timing_minutes
+             r.timing_minutes,
+             ${EVIDENCE_JSON}
       FROM recommendations r
       JOIN products p ON r.product_id = p.product_id
       WHERE r.user_id = $1 AND r.session_id = $2
@@ -58,16 +77,29 @@ class Recommendation extends BaseModel {
   }
 
   static async insertRecommendation(client, input) {
-    const { userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes } =
+    const { userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes,
+      evidence_mode = 'legacy', cadence_status = null, evidence_note = null, evidence = [] } =
       this.normalizeRecommendationInput(input);
     const { rows } = await client.query(
       `INSERT INTO recommendations
-      (user_id, session_id, product_id, feedback, feedback_notes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at)
-      VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW())
+      (user_id, session_id, product_id, feedback, feedback_notes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at,
+       evidence_mode, cadence_status, evidence_note)
+      VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW(), $9, $10, $11)
       RETURNING recommendation_id`,
-      [userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes]
+      [userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes,
+       evidence_mode, cadence_status, evidence_note ? String(evidence_note).slice(0, 1000) : null]
     );
-    return rows[0].recommendation_id;
+    const recommendationId = rows[0].recommendation_id;
+    for (const e of evidence) {
+      await client.query(
+        `INSERT INTO recommendation_evidence (recommendation_id, source_id, claim_id, chunk_id, relation_type, role, similarity, score, rank)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT ON CONSTRAINT recommendation_evidence_unique DO NOTHING`,
+        [recommendationId, e.source_id, e.claim_id ?? null, e.chunk_id ?? null, e.relation_type, e.role,
+         e.similarity ?? null, e.score ?? null, e.rank ?? null]
+      );
+    }
+    return recommendationId;
   }
 
   static async selectWithProduct(client, recommendationIds) {
@@ -79,7 +111,8 @@ class Recommendation extends BaseModel {
               r.consumption_timing,
               r.consumption_instructions,
               r.recommended_quantity,
-              r.timing_minutes
+              r.timing_minutes,
+              ${EVIDENCE_JSON}
        FROM recommendations r
        JOIN products p ON r.product_id = p.product_id
        WHERE r.recommendation_id = ANY($1::int[])

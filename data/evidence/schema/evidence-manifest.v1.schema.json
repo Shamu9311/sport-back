@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://sport-tesis.local/schemas/evidence-manifest.v1.schema.json",
   "title": "Manifiesto de evidencia científica (una fuente por archivo)",
-  "description": "Contrato v1.1 de ingesta (compatible con v1.0). Los campos desconocidos se OMITEN; nunca se rellenan con valores inventados. Referencias por claves naturales (ingredient/formulation code, product_id del catálogo, chunk_key, claim_key). v1.1: usage_instruction puede ser una orientación general sin sujeto solo en fuentes scientific_evidence/official_guideline.",
+  "description": "Contrato v1.2 de ingesta (compatible con v1.0 y v1.1; v1.2 añade conditions.sweat_loss y conditions.any_of). Los campos desconocidos se OMITEN; nunca se rellenan con valores inventados. Referencias por claves naturales (ingredient/formulation code, product_id del catálogo, chunk_key, claim_key). v1.1: usage_instruction puede ser una orientación general sin sujeto solo en fuentes scientific_evidence/official_guideline.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "source"],
@@ -26,7 +26,7 @@
     }
   ],
   "properties": {
-    "schema_version": { "enum": ["1.0", "1.1"] },
+    "schema_version": { "enum": ["1.0", "1.1", "1.2"] },
     "source": { "$ref": "#/$defs/source" },
     "chunks": { "type": "array", "items": { "$ref": "#/$defs/chunk" }, "default": [] },
     "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" }, "default": [] },
@@ -128,9 +128,31 @@
         "max_exercise_minutes": { "type": "integer", "minimum": 0 },
         "intensity": { "type": "array", "uniqueItems": true, "items": { "enum": ["low", "moderate", "high", "very_high"] } },
         "environment": { "type": "array", "uniqueItems": true, "items": { "enum": ["heat", "cold", "humid", "altitude", "temperate"] } },
+        "sweat_loss": {
+          "description": "v1.2: pérdidas de sudor del deportista declaradas por la fuente (perfil sweat_level: bajo→low, medio→moderate, alto→high).",
+          "type": "array", "uniqueItems": true, "items": { "enum": ["low", "moderate", "high"] }
+        },
+        "any_of": {
+          "description": "v1.2: basta con que se cumpla UNO de estos disparadores (p. ej. calor O sudoración alta). Las demás condiciones del objeto siguen siendo obligatorias.",
+          "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/conditionTrigger" }
+        },
         "sports": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } },
         "goals": { "type": "array", "items": { "$ref": "#/$defs/nonEmpty" } },
         "notes": { "type": "string" }
+      }
+    },
+
+    "conditionTrigger": {
+      "description": "v1.2: disparador de aplicabilidad dentro de any_of (sin notas ni anidamiento).",
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "min_exercise_minutes": { "type": "integer", "minimum": 0 },
+        "max_exercise_minutes": { "type": "integer", "minimum": 0 },
+        "intensity": { "type": "array", "uniqueItems": true, "minItems": 1, "items": { "enum": ["low", "moderate", "high", "very_high"] } },
+        "environment": { "type": "array", "uniqueItems": true, "minItems": 1, "items": { "enum": ["heat", "cold", "humid", "altitude", "temperate"] } },
+        "sweat_loss": { "type": "array", "uniqueItems": true, "minItems": 1, "items": { "enum": ["low", "moderate", "high"] } }
       }
     },
 

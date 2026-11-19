@@ -168,18 +168,63 @@ Evidencia sobre un ingrediente **no demuestra** la eficacia de un producto que l
 - Las fuentes `retired` se omiten.
 - La búsqueda usa `<=>` con índice HNSW y la vista `v_retrievable_evidence_chunks`, que solo incluye `reviewed`.
 
-## 7. Trazabilidad y fase siguiente
+## 7. Evidence RAG en el recomendador (`USE_EVIDENCE_RAG=true`)
 
-- Cada claim y cada chunk referencian su fuente (DOI, PMID, URL). `getProvenance()` lo devuelve.
-- Cada ingesta con `--confirm` queda registrada en `evidence_ingest_runs` (hash del archivo, resumen y errores).
-- **Previsto para la fase siguiente, todavía no creado:**
-  - `recommendation_runs`: modelo, versión, duración, flag de evidencia, uso del sistema de reglas, candidatos y evidencia recuperada;
-  - `recommendation_evidence`: `recommendation_id`, `source_id`, `chunk_id`, `claim_id`, `similarity`, `rank`, `cited`.
-- **Flujo futuro:**
+Con `USE_EVIDENCE_RAG=false` (valor por defecto) el recomendador sigue usando el flujo anterior sin cambios.
+Con `true` se usa este flujo (`services/evidenceRecommendationService.js`):
 
-  ```
-  perfil + entrenamiento → candidatos → ingredientes/formulaciones → evidencia
-    → chunks + claims → ranking por similitud × calidad → Gemini
-  ```
+```
+perfil + sesión → productos candidatos → ingredientes/formulaciones
+  → elegibilidad (claims revisados) → similitud pgvector (chunks revisados) → ranking
+  → contexto con refs (P/C/S/K) → Gemini (o respaldo determinista) → validación → recommendation_evidence
+```
 
-  La recuperación ocurre **después** de conocer los candidatos, sobre una base curada.
+### 7.1 Orden de decisión (`services/evidenceEligibilityService.js`)
+
+1. **Claim científico o de guía `reviewed`** (fuente `reviewed`, no fabricante): habilita nutriente + momento + condiciones. Solo `strong`/`moderate` (vista `v_claim_timing_support`); `limited` y `not_assessed` no habilitan.
+2. **Rol funcional compatible** (`product_type_functional_roles` + `functional_role_nutrients`, versión `v1.0`, por `product_type`): `fueling`, `hydration`, `recovery`, `no_fueling`. Restringe; nunca habilita.
+3. **Cantidad útil**: la dosis sale del propio claim (o, si no la declara, del claim con dosis del mismo sujeto y fuente).
+   - Carbohidrato durante (g/h): `porciones/h = objetivo ÷ g por porción`; 30–60 g/h (1–2.5 h) y hasta 90 g/h (>150 min) solo con formulación de varios carbohidratos.
+   - Cafeína (mg/kg del usuario): 3–6 mg/kg banda **principal**; 2–<3 mg/kg banda **contextual** (claim `caffeine-minimal-effective-dose`, nivel C, incierto). Por encima de 6 mg/kg no se propone aumentar y se avisa.
+   - Proteína: ≥20 g por toma. Sodio: ≥500 mg/L de bebida, con las condiciones estructuradas del claim.
+4. **Ficha oficial revisada del fabricante**: confirma o restringe forma y frecuencia (`usage_instruction` con `dose_unit` = `servings_per_hour` / `servings_per_day`). Nunca demuestra eficacia.
+5. **Ranking**: nivel × relación × fuerza del timing × dirección × condiciones × similitud; resta la evidencia neutral/insuficiente; `cadence_unverified` pesa menos.
+
+### 7.2 Cadencia
+
+| Estado | Qué permite |
+|---|---|
+| `cadence_verified` | Tasas por hora y varias porciones dentro del máximo de la ficha revisada |
+| `cadence_unverified` | **Una sola porción** que cumpla por sí sola la dosis; nunca porciones/h, repeticiones de cafeína ni `daily_chronic` |
+
+No se heredan instrucciones entre sabores o variantes salvo que la propia fuente oficial lo declare.
+
+### 7.3 Número de recomendaciones
+
+Sin mínimo y sin relleno de fases. Máximo 5: una por fase y hasta 2 en "durante" (nutrientes distintos); un producto una sola vez. `daily_chronic` nunca se deriva de la categoría del producto.
+
+### 7.4 Trazabilidad
+
+- `recommendation_evidence`: `recommendation_id`, `source_id`, `claim_id`, `chunk_id`, `relation_type`, `role` (`supports`, `caveat`, `dose_reference`, `usage_constraint`), `similarity`, `score`, `rank`. Un trigger impide registrar al fabricante como respaldo (solo `usage_constraint`).
+- `recommendations.evidence_mode` (`legacy` / `evidence_rag`), `cadence_status`, `evidence_note`.
+- `training_sessions.recommendation_status` (`pending`, `ready`, `none`, `failed`) permite al frontend distinguir "generando" de "sin evidencia suficiente".
+- La API devuelve en cada recomendación `evidence[]` (título, año, tipo, resumen, DOI/URL, rol), sin similitud ni datos técnicos.
+
+### 7.5 Contrato v1.2 (condiciones) — propuesto, pendiente de validación
+
+- `conditions.sweat_loss`: `low` / `moderate` / `high`, que se compara con `user_profiles.sweat_level` (`bajo`/`medio`/`alto`).
+- `conditions.any_of`: lista de ≥2 disparadores; basta con que se cumpla uno (p. ej. `heat` **o** `sweat_loss: high`). El resto de condiciones del objeto sigue siendo obligatorio.
+- Usar `sweat_loss` o `any_of` exige `schema_version: "1.2"`.
+- Las pérdidas elevadas de sodio por sudor ("salty sweat") no se pueden estructurar: el perfil no tiene ese dato.
+- Las dosis en concentración (mg/L) se tratan como **rango**: por encima del máximo del claim no hay respaldo, salvo otro claim revisado o una preparación oficial que permita diluir (aún no estructurada en el contrato).
+
+### 7.6 Pendientes antes de activar `USE_EVIDENCE_RAG=true`
+
+1. **Revisar las fichas del fabricante del Batch 2 (`draft`)**, en especial las que aportan cadencia (25: 1–3/h; 17: 1/h; 5: 1/día). Mientras sigan en `draft`, ningún producto tiene `cadence_verified` y el carbohidrato "durante" no puede recomendarse.
+2. **Recuperación híbrida de candidatos.** Hoy Evidence RAG evalúa solo el top-20 vectorial, y un producto estructuralmente elegible (p. ej. el 25) puede quedar fuera. Propuesta:
+   - candidatos = top-K vectorial ∪ productos **estructuralmente elegibles**: tipo con rol compatible y que contengan (con cantidad declarada) un nutriente o formulación habilitado por algún claim revisado para los momentos posibles de la sesión;
+   - los mismos filtros duros que hoy (activos, restricciones dietéticas, tolerancia a cafeína, feedback negativo);
+   - la similitud vectorial solo ordena; no decide qué productos se evalúan;
+   - límite por rendimiento sobre el conjunto estructural (≈50 productos activos: sin coste apreciable).
+3. **Ingerir la condición v1.2 del claim de sodio AIS** solo tras validarla (calor **o** sudoración alta).
+4. **Concentraciones de sodio fuera de rango.** Ninguna bebida actual queda en 500–700 mg/L (GO Electrolyte 1000; HYDRO 1740 con el dato pendiente del producto 36). No se dan como respaldadas.

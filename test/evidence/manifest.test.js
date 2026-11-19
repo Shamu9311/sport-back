@@ -215,6 +215,29 @@ describe('Contrato v1.1: usage_instruction general (sin sujeto)', () => {
   });
 });
 
+describe('Contrato v1.2: condiciones de sudoración y disparadores alternativos', () => {
+  const withConditions = (conditions, version = '1.2') => {
+    const m = clone(loadExample('guideline'));
+    m.schema_version = version;
+    m.claims[0].conditions = conditions;
+    return m;
+  };
+
+  it('acepta any_of con calor o sudoración alta en un manifiesto 1.2', () => {
+    expect(errorsOf(withConditions({ any_of: [{ environment: ['heat'] }, { sweat_loss: ['high'] }] }))).toEqual([]);
+  });
+
+  it('rechaza valores de sudoración desconocidos, disparadores vacíos o un único disparador', () => {
+    expect(errorsOf(withConditions({ sweat_loss: ['muy alta'] })).length).toBeGreaterThan(0);
+    expect(errorsOf(withConditions({ any_of: [{}, { environment: ['heat'] }] })).length).toBeGreaterThan(0);
+    expect(errorsOf(withConditions({ any_of: [{ environment: ['heat'] }] })).length).toBeGreaterThan(0);
+  });
+
+  it('las condiciones v1.2 exigen declarar schema_version 1.2', () => {
+    expect(errorsOf(withConditions({ sweat_loss: ['high'] }, '1.1')).join()).toMatch(/requieren schema_version "1.2"/);
+  });
+});
+
 describe('Chunking', () => {
   it('conserva los fragmentos curados y calcula un hash estable', () => {
     const { rows } = prepareChunks(loadExample('scientific').chunks);

@@ -43,6 +43,13 @@
       "content": "La posición reporta que fuentes alternativas de cafeína, incluidos geles y chews con cafeína, han mostrado mejoras de rendimiento principalmente en ejercicio aeróbico.",
       "content_kind": "own_summary",
       "heading": "Fuentes alternativas"
+    },
+    {
+      "chunk_key": "minimal-effective-dose",
+      "section": "summary",
+      "content": "En su resumen (punto 3), la posición ISSN indica que la cafeína ha mejorado el rendimiento de forma consistente con 3–6 mg/kg de masa corporal. Señala que la dosis mínima efectiva todavía no está clara, aunque podría ser tan baja como aproximadamente 2 mg/kg. Las dosis muy altas (por ejemplo, 9 mg/kg) se asocian a una alta incidencia de efectos adversos y no parecen necesarias para obtener un efecto ergogénico.",
+      "content_kind": "own_summary",
+      "heading": "Dosis mínima efectiva"
     }
   ],
   "claims": [
@@ -110,6 +117,31 @@
       "evidence_strength": "A",
       "chunk_keys": [
         "alternative-sources"
+      ]
+    },
+    {
+      "claim_key": "caffeine-minimal-effective-dose",
+      "claim_type": "dosage_guideline",
+      "effect_direction": "positive",
+      "result_summary": "La ISSN considera 3–6 mg/kg el rango con evidencia consistente de mejora del rendimiento. La dosis mínima efectiva no está claramente establecida: podría ser tan baja como aproximadamente 2 mg/kg, pero la propia posición la presenta como incierta.",
+      "statistical_significance": "not_tested",
+      "review_status": "reviewed",
+      "ingredient": "caffeine",
+      "dose_text": "Posiblemente desde ~2 mg/kg (dosis mínima efectiva no establecida); rango con evidencia consistente: 3–6 mg/kg; dosis muy altas (p. ej., 9 mg/kg) no parecen necesarias y se asocian a más efectos adversos",
+      "dose_value": 2,
+      "dose_value_max": 3,
+      "dose_unit": "mg/kg",
+      "dose_relative": "mg/kg",
+      "timing_context": [
+        "not_specified"
+      ],
+      "timing_evidence_strength": "not_assessed",
+      "outcome": "rendimiento físico",
+      "practical_interpretation": "Dosis entre ~2 y <3 mg/kg pueden considerarse una opción baja con respaldo menor e incierto; no equivalen al rango de 3–6 mg/kg ni justifican por sí solas un momento de consumo.",
+      "limitations": "La posición no establece la dosis mínima efectiva; ~2 mg/kg se formula como posibilidad (\"may be as low as\"), no como umbral demostrado. La respuesta varía entre individuos.",
+      "evidence_strength": "C",
+      "chunk_keys": [
+        "minimal-effective-dose"
       ]
     }
   ],

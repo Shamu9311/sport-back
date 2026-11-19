@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/eu/shop-sis/energy-hydration/go-energy-bars/go-energy-mini-30-bar",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official page: serving 40 g, 25–26 g carbohydrate depending on flavour, 0.1 g salt. Catalog review row references 45 g serving."
   },
@@ -29,7 +31,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual usa 40 g por bar, con aproximadamente 25–26 g de carbohidratos y 0.1 g de sal, según sabor.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],

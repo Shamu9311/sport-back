@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/shop-sis/all-products/beta-fuel-80",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current page: 82 g serving gives 80 g carbohydrate; salt 0 g. Catalog record uses per-100 g carbohydrate basis and a sodium value of 0.8, so do not overwrite automatically."
   },
@@ -36,7 +38,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual declara 80 g de carbohidratos por porción de 82 g.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -56,8 +58,13 @@
       "product_id": 17,
       "effect_direction": "not_applicable",
       "result_summary": "El fabricante indica usar BETA Fuel 80 durante ejercicio prolongado.",
+      "frequency": "un sobre por hora (o combinado con otros productos BETA)",
+      "dose_text": "1 sobre en 600 ml de agua, como máximo 1 por hora",
+      "dose_value": 1,
+      "dose_value_max": 1,
+      "dose_unit": "servings_per_hour",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "during"
       ],

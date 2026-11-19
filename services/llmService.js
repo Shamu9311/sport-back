@@ -603,3 +603,33 @@ function getFallbackRecommendations(userProfile, candidateProducts, numRecommend
 }
 
 export { getFallbackRecommendations };
+
+/** ¿Hay algún proveedor de LLM configurado? (lo usa Evidence RAG para decidir si recurre a su respaldo) */
+export const isLLMAvailable = () => hasLLMProvider;
+
+/**
+ * Llamada genérica al LLM configurado que devuelve el JSON parseado. La usa el flujo Evidence RAG;
+ * el flujo antiguo (getRecommendationsFromLLM) no cambia.
+ */
+export async function callLLMJson(prompt, { temperature = 0.2, maxOutputTokens = 4096 } = {}) {
+    let content;
+    if (LLM_PROVIDER === 'gemini' && geminiModel) {
+        const result = await geminiModel.generateContent({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { temperature, maxOutputTokens, responseMimeType: 'application/json' },
+        });
+        content = (await result.response).text();
+    } else if (openaiClient) {
+        const completion = await openaiClient.chat.completions.create({
+            model: 'gpt-3.5-turbo-0125',
+            messages: [{ role: 'user', content: prompt }],
+            response_format: { type: 'json_object' },
+            temperature,
+            max_tokens: maxOutputTokens,
+        });
+        content = completion.choices[0].message.content;
+    } else {
+        throw new Error('No LLM provider available.');
+    }
+    return JSON.parse(String(content).replace(/```(?:json)?\s*/g, '').trim());
+}

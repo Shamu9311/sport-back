@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/eu/rego-rapid-recovery-chocolate-1-6kg",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official EU page: serving 50 g, 20 g protein, 22 g carbohydrate, 1.0 g salt. Catalog review row references 70 g serving."
   },
@@ -36,7 +38,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial EU actual declara 20 g de proteína, 22 g de carbohidratos y 1.0 g de sal por 50 g.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -53,7 +55,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "El fabricante posiciona REGO Rapid Recovery para recuperación inmediatamente después de ejercicio prolongado o intenso.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "post"
       ],

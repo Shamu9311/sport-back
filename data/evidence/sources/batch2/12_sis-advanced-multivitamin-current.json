@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/shop-sis/health-supplements/advanced-multivitamin",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Official table lists individual vitamins/minerals, enabling replacement of generic 'B-complex' with explicitly declared B vitamins. Suggested use is 1 tablet daily with food, but manufacturer timing must not independently enable RAG timing."
   },
@@ -36,7 +38,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 1.1 mg de vitamina B1 por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -57,7 +59,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 16 mg NE de niacina por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -78,7 +80,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 1.4 mg de vitamina B6 por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -99,7 +101,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 400 µg de ácido fólico por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -120,7 +122,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 2.5 µg de vitamina B12 por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -141,7 +143,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 50 µg de biotina por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -162,7 +164,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 6 mg de ácido pantoténico por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -183,7 +185,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "El fabricante indica una tableta diaria con comida, además de una dieta equilibrada.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "daily_chronic"
       ],

@@ -117,6 +117,20 @@ export async function runIntegrityChecks(client, { dump = null } = {}) {
        `SELECT COUNT(*)::int n FROM evidence_claims c JOIN evidence_sources s USING (source_id)
         WHERE c.claim_type = 'usage_instruction' AND s.source_category = 'manufacturer_specification'
           AND c.ingredient_id IS NULL AND c.product_id IS NULL`],
+      ['Productos activos con clasificación funcional (014)',
+       `SELECT COUNT(*)::int n FROM products p WHERE p.is_active AND to_regclass('public.product_type_functional_roles') IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM product_type_functional_roles r WHERE r.type_id = p.type_id)`],
+      ['Nutrientes de la clasificación funcional existen en el catálogo',
+       `SELECT COUNT(*)::int n FROM (SELECT unnest(nutrients) code FROM product_type_functional_roles
+          UNION SELECT nutrient FROM functional_role_nutrients) x
+        WHERE NOT EXISTS (SELECT 1 FROM ingredients i WHERE i.code = x.code AND i.is_active)`],
+      ['recommendation_evidence: el fabricante nunca respalda eficacia',
+       `SELECT COUNT(*)::int n FROM recommendation_evidence re JOIN evidence_sources s USING (source_id)
+        WHERE (s.source_category = 'manufacturer_specification') <> (re.role = 'usage_constraint')`],
+      ['recommendation_evidence: respaldo solo con evidencia revisada',
+       `SELECT COUNT(*)::int n FROM recommendation_evidence re JOIN evidence_sources s USING (source_id)
+        LEFT JOIN evidence_claims c ON c.claim_id = re.claim_id
+        WHERE re.role = 'supports' AND (s.review_status <> 'reviewed' OR c.review_status IS DISTINCT FROM 'reviewed')`],
       ['product_ingredients con ingredientes activos',
        `SELECT COUNT(*)::int n FROM product_ingredients pi JOIN ingredients i USING (ingredient_id) WHERE NOT i.is_active`],
     ];

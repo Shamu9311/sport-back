@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/orange-immune-tablets",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Official page: 0.9 g salt per tablet, 200 mg vitamin C, 2.5 mg iron. Page explicitly states salt = total sodium × 2.5, enabling a derived sodium value of 360 mg per tablet."
   },
@@ -36,7 +38,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 200 mg de vitamina C por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -57,7 +59,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 2.5 mg de hierro por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -78,7 +80,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial declara 0.9 g de sal y especifica sal = sodio total × 2.5; esto equivale a 360 mg de sodio por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -99,7 +101,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "El fabricante permite hasta una tableta al día, disuelta en 500 ml de agua.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "daily_chronic"
       ],

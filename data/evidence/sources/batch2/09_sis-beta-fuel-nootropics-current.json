@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/beta-fuel-nootropics-pack",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official product is Apple/Lemon & Lime with 200 mg caffeine, 250 mg citicoline, 1 g taurine, 200 mg L-theanine. Catalog Raspberry/Mango variants cannot be assumed equivalent; another SiS pack page also shows a conflicting 75 mg caffeine statement."
   },
@@ -36,7 +38,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual declara 200 mg de cafeína por gel.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -57,7 +59,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual declara 250 mg de citicolina Cognizin® por gel.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -78,7 +80,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual declara 1 g de L-taurina por gel.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -99,7 +101,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual declara 200 mg de L-teanina por gel.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
@@ -119,8 +121,15 @@
       "product_id": 5,
       "effect_direction": "not_applicable",
       "result_summary": "El fabricante indica un máximo de una porción al día y su uso en fases tardías de ejercicio prolongado.",
+      "frequency": "máximo 1 porción al día",
+      "dose_text": "Máximo 1 porción al día, en las fases finales del ejercicio de resistencia prolongado",
+      "dose_value_max": 1,
+      "dose_unit": "servings_per_day",
+      "conditions": {
+        "notes": "Uso en las fases finales del ejercicio de resistencia prolongado (instrucción del fabricante)."
+      },
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "during"
       ],

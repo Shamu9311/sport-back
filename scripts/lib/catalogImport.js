@@ -61,6 +61,23 @@ export async function syncIdentity(client, table, column) {
   );
 }
 
+/** Marca de las migraciones que corrigen datos del catálogo y deben reaplicarse tras reimportar el dump. */
+export const CATALOG_CORRECTION_MARKER = '@catalog-correction';
+
+/**
+ * Reaplica las migraciones marcadas como corrección de catálogo (idempotentes). El dump MariaDB es anterior
+ * a esas correcciones: sin este paso, reimportarlo las desharía (p. ej. el tipo de los productos 17 y 18).
+ */
+export async function applyCatalogCorrections(client, { log = console.log } = {}) {
+  const { listMigrationFiles } = await import('../../db/migrate.js');
+  const corrections = listMigrationFiles().filter((m) => m.sql.includes(CATALOG_CORRECTION_MARKER));
+  for (const m of corrections) {
+    await client.query(m.sql);
+    log(`  ✔ corrección de catálogo reaplicada: ${m.name}`);
+  }
+  return corrections.map((m) => m.name);
+}
+
 /**
  * Importa todas las tablas de catálogo dentro de una transacción.
  * @returns {Promise<Record<string, number>>} filas por tabla
@@ -75,6 +92,7 @@ export async function importCatalog(client, { dumpPath, dump = readDump(dumpPath
       if (spec.identity) await syncIdentity(client, spec.table, spec.identity);
       log(`  ✔ ${spec.table}: ${summary[spec.table]} filas`);
     }
+    summary.catalog_corrections = await applyCatalogCorrections(client, { log });
     await client.query('COMMIT');
   } catch (error) {
     await client.query('ROLLBACK').catch(() => {});

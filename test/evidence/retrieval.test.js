@@ -126,12 +126,17 @@ describe('Embeddings y recuperación de evidencia (servicio aislado)', () => {
     ]));
   });
 
-  it('Evidence RAG sigue desactivado y aislado del recomendador', () => {
+  it('Evidence RAG está desactivado por defecto y el flujo antiguo no usa la evidencia', () => {
     expect(process.env.USE_EVIDENCE_RAG).toBe('false');
     expect(isEvidenceRagEnabled()).toBe(false);
-    for (const file of ['llmService.js', 'retrievalService.js', 'trainingRecommendationService.js']) {
+    // Módulos del flujo antiguo: sin ninguna referencia a la capa de evidencia
+    for (const file of ['llmService.js', 'retrievalService.js']) {
       const src = fs.readFileSync(path.resolve(__dirname, '../../services', file), 'utf8');
-      expect(src).not.toMatch(/evidenceRetrievalService|evidence_/);
+      expect(src).not.toMatch(/evidenceRetrievalService|evidenceRecommendationService|evidence_/);
     }
+    // El servicio de entrenamiento solo entra en Evidence RAG detrás del flag
+    const training = fs.readFileSync(path.resolve(__dirname, '../../services/trainingRecommendationService.js'), 'utf8');
+    expect(training).toMatch(/const evidenceMode = isEvidenceRagEnabled\(\);/);
+    expect(training).toMatch(/if \(evidenceMode\) \{\s*return await this\.generateWithEvidence/);
   });
 });

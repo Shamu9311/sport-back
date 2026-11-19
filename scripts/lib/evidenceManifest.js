@@ -121,6 +121,12 @@ export function validateBusinessRules(manifest, ctx = {}) {
     }
     if (isManufacturer && claim.sample_size) errors.push(`${where}: sample_size no aplica a una especificación del fabricante`);
 
+    // Condiciones v1.2 (sudoración y disparadores alternativos) exigen declarar el contrato 1.2
+    const cond = claim.conditions || {};
+    if ((cond.sweat_loss || cond.any_of) && manifest.schema_version !== '1.2') {
+      errors.push(`${where}: conditions.sweat_loss / conditions.any_of requieren schema_version "1.2"`);
+    }
+
     // Sujeto del claim (contrato v1.1)
     const hasSubject = Boolean(claim.ingredient || claim.formulation || claim.product_id);
     if (!hasSubject && !SUBJECTLESS_CLAIM_TYPES.has(claim.claim_type)) {

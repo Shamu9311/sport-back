@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0",
+  "schema_version": "1.2",
   "source": {
     "source_key": "ais-electrolyte-supplements",
     "source_type": "official_framework",
@@ -48,7 +48,19 @@
       "timing_details": "Uso condicionado por ambiente, duración, tasa de sudoración, contenido de sodio del sudor y magnitud del déficit hídrico.",
       "timing_evidence_strength": "moderate",
       "conditions": {
-        "notes": "Especialmente relevante en calor, sudoración prolongada o pérdidas elevadas; individualizar."
+        "any_of": [
+          {
+            "environment": [
+              "heat"
+            ]
+          },
+          {
+            "sweat_loss": [
+              "high"
+            ]
+          }
+        ],
+        "notes": "Especialmente relevante en calor, sudoración prolongada o pérdidas elevadas; individualizar. sweat_loss=high se evalúa con el sweat_level=alto declarado en el perfil: es un proxy práctico de pérdidas elevadas por sudor, NO una medición de la concentración de sodio del sudor ni equivale a \"salty sweat\" (que el perfil actual no registra)."
       },
       "outcome": "reposición de electrolitos y retención de fluidos",
       "evidence_strength": "A",

@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/eu/go-hydro-tablets-sis",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current Berry serving: 0.87 g salt and 345 mg sodium per tablet; current product is not zero-calorie (about 7–9 kcal depending on page/flavour)."
   },
@@ -29,7 +31,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual de GO Hydro Berry declara 345 mg de sodio por tableta.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],

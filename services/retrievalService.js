@@ -33,6 +33,46 @@ export function balanceByUsageContext(rankedProducts, max = MAX_CANDIDATE_PRODUC
     // Conservar el orden original del ranking
     return rankedProducts.filter((p) => selected.has(p));
 }
+
+/**
+ * Filtros duros (restricciones absolutas) de dieta y tolerancia a la cafeína. Exportado para que cualquier
+ * fuente de candidatos aplique exactamente las mismas reglas.
+ */
+export function passesHardFilters(product, userProfile) {
+    // Restricciones dietéticas
+    if (userProfile.dietary_restrictions && userProfile.dietary_restrictions.toLowerCase() !== 'no') {
+        const restrictions = userProfile.dietary_restrictions.toLowerCase();
+        const attributes = (Array.isArray(product.attributes) ? product.attributes.join(',') : (product.attributes || '')).toLowerCase();
+
+        if (restrictions.includes('vegano') && !attributes.includes('vegano')) {
+            return false;
+        }
+        if (restrictions.includes('vegetariano') &&
+            !attributes.includes('vegetariano') &&
+            !attributes.includes('vegano')) {
+            return false;
+        }
+        if (restrictions.includes('libre de gluten') && !attributes.includes('libre de gluten')) {
+            return false;
+        }
+    }
+
+    // Tolerancia a cafeína
+    if (userProfile.caffeine_tolerance) {
+        const tolerance = userProfile.caffeine_tolerance.toLowerCase();
+        const caffeine = product.caffeine_mg || 0;
+
+        if (tolerance === 'no' && caffeine > 0) {
+            return false;
+        }
+        if (tolerance === 'bajo' && caffeine > 50) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 const USE_VECTOR_SEARCH = process.env.USE_VECTOR_SEARCH === 'true'; // Flag para activar/desactivar
 
 export const getCandidateProducts = async (userProfile, trainingData = {}) => {
@@ -131,40 +171,7 @@ async function getCandidateProductsWithVectorSearch(userProfile, trainingData) {
     `, [filteredIds]);
     
     // 4. Aplicar filtros duros (restricciones absolutas)
-    const filtered = products.filter(product => {
-        // Restricciones dietéticas
-        if (userProfile.dietary_restrictions && userProfile.dietary_restrictions.toLowerCase() !== 'no') {
-            const restrictions = userProfile.dietary_restrictions.toLowerCase();
-            const attributes = (product.attributes || '').toLowerCase();
-            
-            if (restrictions.includes('vegano') && !attributes.includes('vegano')) {
-                return false;
-            }
-            if (restrictions.includes('vegetariano') && 
-                !attributes.includes('vegetariano') && 
-                !attributes.includes('vegano')) {
-                return false;
-            }
-            if (restrictions.includes('libre de gluten') && !attributes.includes('libre de gluten')) {
-                return false;
-            }
-        }
-        
-        // Tolerancia a cafeína
-        if (userProfile.caffeine_tolerance) {
-            const tolerance = userProfile.caffeine_tolerance.toLowerCase();
-            const caffeine = product.caffeine_mg || 0;
-            
-            if (tolerance === 'no' && caffeine > 0) {
-                return false;
-            }
-            if (tolerance === 'bajo' && caffeine > 50) {
-                return false;
-            }
-        }
-        
-        return true;
-    });
+    const filtered = products.filter((product) => passesHardFilters(product, userProfile));
     
     console.log(`✅ Vector search: ${products.length} productos encontrados, ${filtered.length} después de filtros duros`);
 

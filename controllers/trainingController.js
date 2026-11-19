@@ -117,7 +117,12 @@ export const getSessionRecommendations = async (req, res) => {
       sessionId
     );
 
-    return sendSuccess(res, 200, { data: recommendations });
+    // meta solo se informa en Evidence RAG: permite al frontend distinguir "generando" de "sin evidencia suficiente"
+    const session = req.trainingSession || {};
+    const meta = session.recommendation_status
+      ? { recommendation_status: session.recommendation_status, recommendation_note: session.recommendation_note || null }
+      : undefined;
+    return sendSuccess(res, 200, { data: recommendations, ...(meta ? { meta } : {}) });
   } catch (error) {
     console.error('Error getting recommendations:', error);
     return sendError(res, 500, 'Error al obtener recomendaciones de la sesión', error);

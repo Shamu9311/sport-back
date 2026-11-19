@@ -4,6 +4,9 @@ import { getCandidateProducts } from '../services/retrievalService.js';
 import { generateRecommendations } from '../services/llmService.js';
 import { sendError, sendSuccess } from '../utils/apiResponse.js';
 import Feedback from '../models/feedbackModel.js';
+import Recommendation from '../models/recommendationModel.js';
+import { isEvidenceRagEnabled } from '../services/evidenceRetrievalService.js';
+import { generateEvidenceRecommendations } from '../services/evidenceRecommendationService.js';
 
 export const getRecommendations = async (req, res) => {
     const userId = req.user.id; // Asumiendo que tu middleware authMiddleware añade `req.user = { id: userId, ... }`
@@ -31,6 +34,25 @@ export const getRecommendations = async (req, res) => {
              return sendSuccess(res, 200, {
                 message: 'No se encontraron productos adecuados según tu perfil. Puedes ajustar tu perfil e intentar de nuevo.',
                 data: { recommendations: [] }
+            });
+        }
+
+        // 3b. Evidence RAG (USE_EVIDENCE_RAG=true): número variable de recomendaciones, trazables a la evidencia
+        if (isEvidenceRagEnabled()) {
+            const positiveProductIds = await Feedback.getPositiveFeedbackProducts(userId).catch(() => []);
+            const result = await generateEvidenceRecommendations({
+                profile: userProfile, trainingData, candidates: candidateProducts, positiveProductIds,
+            });
+            const saved = await Recommendation.createRecommendationsBatch(result.recommendations.map((rec) => ({
+                userId, sessionId: null, productId: rec.product_id, reason: rec.reasoning,
+                consumption_timing: rec.consumption_timing, recommended_quantity: rec.quantity,
+                consumption_instructions: rec.instructions, timing_minutes: rec.timing_minutes,
+                evidence_mode: 'evidence_rag', cadence_status: rec.cadence_status, evidence_note: rec.evidence_note,
+                evidence: rec.evidence,
+            })));
+            return sendSuccess(res, 200, {
+                message: saved.length ? result.llmReasoning : 'No hay evidencia suficiente para recomendar productos en este contexto.',
+                data: { recommendations: saved, omitted_phases: result.omittedPhases },
             });
         }
 

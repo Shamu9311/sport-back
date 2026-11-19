@@ -1,11 +1,25 @@
 import Recommendation from '../models/recommendationModel.js';
 import User from '../models/userModel.js';
 import { getRecommendationsFromLLM } from './llmService.js';
+import { isEvidenceRagEnabled } from './evidenceRetrievalService.js';
+import { generateEvidenceRecommendations } from './evidenceRecommendationService.js';
+import Feedback from '../models/feedbackModel.js';
+
+/** Estado de generación de la sesión (solo Evidence RAG; el flujo antiguo no lo usa). */
+async function setSessionStatus(sessionId, status, note = null) {
+  if (!sessionId) return;
+  await User.pool.query(
+    'UPDATE training_sessions SET recommendation_status = $2, recommendation_note = $3 WHERE session_id = $1',
+    [sessionId, status, note ? String(note).slice(0, 1000) : null]
+  ).catch((e) => console.error('No se pudo actualizar el estado de recomendaciones:', e.message));
+}
 
 export default class TrainingRecommendationService {
   static async generateTrainingRecommendations(userId, sessionId, trainingData) {
+    const evidenceMode = isEvidenceRagEnabled();
     try {
       console.log(`Generando recomendaciones para usuario ${userId}, sesión ${sessionId}`);
+      if (evidenceMode) await setSessionStatus(sessionId, 'pending');
       
       // 1. Obtener el perfil del usuario
       const { rows: userProfile } = await User.pool.query(
@@ -57,6 +71,7 @@ export default class TrainingRecommendationService {
       
       if (!products || products.length === 0) {
         console.warn('No hay productos disponibles para recomendar');
+        if (evidenceMode) await setSessionStatus(sessionId, 'none', 'No hay productos candidatos para tu perfil.');
         return [];
       }
 
@@ -88,6 +103,11 @@ export default class TrainingRecommendationService {
       };
 
       console.log('Datos del perfil para el LLM:', JSON.stringify(profileData, null, 2));
+
+      // 4b. Evidence RAG (USE_EVIDENCE_RAG=true): sin cuotas por fase ni relleno; trazable a claims y fuentes
+      if (evidenceMode) {
+        return await this.generateWithEvidence(userId, sessionId, userProfile[0], trainingData, products);
+      }
 
       // 4. Obtener recomendaciones usando el LLM
       const llmResponse = await getRecommendationsFromLLM(
@@ -136,9 +156,38 @@ export default class TrainingRecommendationService {
       
     } catch (error) {
       console.error('Error en generateTrainingRecommendations:', error);
+      if (evidenceMode) await setSessionStatus(sessionId, 'failed', 'No se pudieron generar las recomendaciones.');
       // En caso de error, devolver un array vacío para no interrumpir el flujo
       return [];
     }
+  }
+
+  /** Flujo Evidence RAG: genera, valida y persiste recomendaciones con su evidencia en una transacción. */
+  static async generateWithEvidence(userId, sessionId, profile, trainingData, candidates) {
+    const positiveProductIds = userId ? await Feedback.getPositiveFeedbackProducts(userId).catch(() => []) : [];
+    const result = await generateEvidenceRecommendations({ profile, trainingData, candidates, positiveProductIds });
+    const inputs = result.recommendations.map((rec) => ({
+      userId,
+      sessionId,
+      productId: rec.product_id,
+      reason: rec.reasoning,
+      consumption_timing: rec.consumption_timing,
+      consumption_instructions: [rec.interval_minutes ? `[interval_minutes=${rec.interval_minutes}]` : null, rec.instructions]
+        .filter(Boolean).join(' ') || null,
+      recommended_quantity: rec.quantity,
+      timing_minutes: rec.timing_minutes,
+      evidence_mode: 'evidence_rag',
+      cadence_status: rec.cadence_status,
+      evidence_note: rec.evidence_note,
+      evidence: rec.evidence,
+    }));
+    const saved = await Recommendation.createRecommendationsBatch(inputs);
+    const note = saved.length
+      ? null
+      : result.omittedPhases.map((o) => `${o.timing}: ${o.reason}`).join(' | ') || result.llmReasoning;
+    await setSessionStatus(sessionId, saved.length ? 'ready' : 'none', note);
+    console.log(`Evidence RAG (${result.mode}): ${saved.length} recomendación(es) para la sesión ${sessionId}`);
+    return saved;
   }
 
   // Obtener recomendaciones para una sesión de entrenamiento

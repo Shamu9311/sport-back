@@ -7,7 +7,9 @@
     "organization": "Science in Sport (SiS)",
     "url": "https://www.scienceinsport.com/catalog/product/view/id/3516/s/sis-go-energy-bakes-12-pack-lemon/category/1894/www.scienceinsport.com/fuel-method",
     "accessed_date": "2026-11-17",
-    "review_status": "draft",
+    "review_status": "reviewed",
+    "reviewed_by": "Samuel Pérez Arpi",
+    "reviewed_at": "2026-11-19T00:02:17.590Z",
     "language": "en",
     "notes": "Manufacturer specification / official product information. Use for composition, serving information and manufacturer instructions only; never as independent evidence of efficacy. Current official page: serving 50 g, 30 g carbohydrate, 3.5 g protein, 0.25 g salt. Catalog review row references 60 g serving, so do not overwrite sodium automatically."
   },
@@ -29,7 +31,7 @@
       "effect_direction": "not_applicable",
       "result_summary": "La ficha oficial actual declara una porción de 50 g con 30 g de carbohidratos, 3.5 g de proteína y 0.25 g de sal.",
       "statistical_significance": "not_tested",
-      "review_status": "draft",
+      "review_status": "reviewed",
       "timing_context": [
         "not_specified"
       ],
