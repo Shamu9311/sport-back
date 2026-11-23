@@ -172,15 +172,18 @@ describe('Evidence RAG — elegibilidad (reglas del diseño aprobado)', () => {
     expect(selectRecommendations(r.eligible).map((s) => s.phase)).toEqual(['durante']);
   });
 
-  it('devuelve 1, 2, 3 o más recomendaciones válidas hasta el máximo (durante ≤ 2, nutrientes distintos)', () => {
+  it('devuelve 1, 2, 3 o más recomendaciones válidas hasta el máximo (1 principal por hueco fase + función)', () => {
+    const session = normalizeSession({ ...S90, weather: 'calido' }, { weight: 60 });
     const r = run([verifiedGel(1), rego, drink600, caffeineGel, { ...verifiedGel(13), product_id: 13 }], { ...S90, weather: 'calido' }, { weight: 60 });
-    const sel = selectRecommendations(r.eligible);
+    const sel = selectRecommendations(r.eligible, { session, caffeineBands: r.caffeineBands });
     expect(sel.length).toBeGreaterThanOrEqual(3);
     expect(sel.length).toBeLessThanOrEqual(MAX_RECOMMENDATIONS);
-    const during = sel.filter((s) => s.phase === 'durante');
-    expect(during.length).toBeLessThanOrEqual(2);
-    expect(new Set(during.map((d) => d.nutrient)).size).toBe(during.length);
-    expect(new Set(sel.map((s) => s.product_id)).size).toBe(sel.length);
+    const slots = sel.flatMap((s) => [s.role, ...s.also_covers].map((fn) => `${s.phase}|${fn}`));
+    expect(new Set(slots).size).toBe(slots.length);
+    // Un producto puede repetirse en fases distintas, nunca dos veces en la misma fase
+    const perPhase = sel.map((s) => `${s.product_id}|${s.phase}`);
+    expect(new Set(perPhase).size).toBe(perPhase.length);
+    expect(sel.filter((s) => s.phase === 'durante' && s.role === 'fueling')).toHaveLength(1);
   });
 });
 

@@ -31,6 +31,8 @@ Con `NODE_ENV=test`, el backend y los scripts usan **siempre** `TEST_DATABASE_UR
 | `012_vitamin_b_codes.sql` | Catálogo de ingredientes v1.1: `vitamin_b6`, `folic_acid`, `vitamin_b12`, `biotin`, `pantothenic_acid` (mismos valores que `data/evidence/ingredients.json`) |
 | `013_beta_fuel_product_types.sql` | Corrección de catálogo: los productos 17 (BETA Fuel 80, polvo para bebida) y 18 (BETA Fuel Energy Chews) pasan a sus tipos propios. Marcada `@catalog-correction`: `importCatalog` la reaplica tras reimportar el dump |
 | `014_evidence_rag.sql` | Evidence RAG: clasificación funcional versionada (`product_type_functional_roles`, `functional_role_nutrients`), `recommendation_evidence` (con trigger ciencia/fabricante), `recommendations.evidence_mode/cadence_status/evidence_note` y `training_sessions.recommendation_status/note` |
+| `015_hydro_berry_sodium.sql` | Corrección de catálogo (`@catalog-correction`): sodio del producto 36 (HYDRO Tablet Berry) 870 → 345 mg según su ficha oficial revisada |
+| `016_recommendation_slots.sql` | Evidence RAG por huecos: `recommendations.functional_role/also_covers/target/usage_plan` (solo `evidence_rag`) y `recommendation_alternatives` (hasta 2 por recomendación, nunca el propio principal; trigger y RLS) |
 
 La capa de evidencia solo participa en las recomendaciones con `USE_EVIDENCE_RAG=true` (por defecto `false`: se mantiene el flujo anterior). El contrato, la escala de niveles A–D, las reglas de timing y el flujo de curación están en [`data/evidence/README.md`](../data/evidence/README.md).
 

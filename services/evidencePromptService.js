@@ -1,11 +1,16 @@
 // services/evidencePromptService.js — Contexto para Gemini, validación de su respuesta y respaldo determinista.
 //
 // El contexto usa referencias cortas (P1, C1, S1, K1) que el servidor traduce a ids reales. Gemini solo puede
-// elegir entre pares (producto, fase) ya elegibles y citar claims que el servidor le entregó; todo lo demás se
-// descarta. Cantidades e intervalos los fija el plan calculado por el servidor, no el modelo.
-import { PHASE_ORDER, MAX_PER_PHASE, MAX_RECOMMENDATIONS, NUTRIENT_LABEL } from './evidenceEligibilityService.js';
+// redactar sobre las recomendaciones principales que el servidor ya eligió (una por hueco fase + función) y citar
+// claims que el servidor le entregó; todo lo demás se descarta. No elige producto ni puede sustituir el principal
+// por una alternativa. Cantidades e intervalos los fija el plan calculado por el servidor, no el modelo.
+import { PHASE_ORDER, MAX_RECOMMENDATIONS, NUTRIENT_LABEL } from './evidenceEligibilityService.js';
 
 const truncate = (s, n) => (s && s.length > n ? `${s.slice(0, n - 1)}…` : s || null);
+const FUNCTION_TEXT = {
+  fueling: 'combustible (carbohidrato)', hydration: 'hidratación (sodio/líquidos)', protein_support: 'aporte de proteína',
+  caffeine: 'cafeína', supplementation: 'suplementación',
+};
 const CADENCE_TEXT = {
   cadence_verified: 'verificada por la ficha oficial revisada',
   cadence_unverified: 'NO verificada: máximo 1 porción, sin repetir ni calcular tasas',
@@ -37,7 +42,10 @@ export function buildEvidenceContext({ profile, session, shortlist, chunksByClai
       tipo: pair.type_name,
       rol_funcional: pair.roles,
       fase: pair.phase,
+      funcion: pair.role ? FUNCTION_TEXT[pair.role] : undefined,
+      tambien_cubre: pair.also_covers?.length ? pair.also_covers.map((fn) => FUNCTION_TEXT[fn]) : undefined,
       nutriente: NUTRIENT_LABEL[pair.nutrient] || pair.nutrient,
+      objetivo: pair.target ? `${pair.target.min ?? '…'}–${pair.target.max ?? '…'} ${pair.target.unit || ''}`.trim() : undefined,
       cantidad_por_porcion: `${pair.amount.amount} ${pair.amount.unit || ''} (${pair.amount.serving || pair.amount.basis})`,
       plan_calculado: pair.plan.quantity,
       cadencia: CADENCE_TEXT[pair.status],
@@ -45,6 +53,9 @@ export function buildEvidenceContext({ profile, session, shortlist, chunksByClai
       restricciones_ficha_oficial: pair.instruction
         ? truncate([pair.instruction.frequency, pair.instruction.conditions?.notes].filter(Boolean).join('; '), 200)
         : null,
+      cafeina_acumulada_del_producto: pair.usage_plan?.caffeine || undefined,
+      sustituye: pair.usage_plan?.replaces
+        ? `cuenta dentro del objetivo de carbohidrato: sustituye ${pair.usage_plan.replaces.servings} porción(es) de ${pair.usage_plan.replaces.product_name}` : undefined,
       avisos: pair.warnings,
       evidencia_apoyo: claimRefs,
       evidencia_matiz: caveatRefs,
@@ -97,8 +108,9 @@ export function buildEvidencePrompt(context) {
 Recibes un CONTEXTO JSON con el perfil, la sesión, pares (producto, fase) ya validados por el servidor y la evidencia revisada recuperada.
 
 REGLAS OBLIGATORIAS:
-1. Recomienda SOLO pares de "productos" (usa su "ref" P y su "product_id" y "fase" exactos). No inventes productos ni fases.
-2. No es obligatorio cubrir todas las fases ni llegar a un número fijo. Omite un par si la evidencia no lo justifica para esta sesión. Máximo ${MAX_RECOMMENDATIONS} recomendaciones; como mucho ${MAX_PER_PHASE.durante} en "durante" y 1 en las demás fases; un producto solo una vez.
+1. Cada entrada de "productos" es la recomendación PRINCIPAL que el servidor ya eligió para un hueco (fase + función). Usa su "ref" P, su "product_id" y su "fase" exactos. No elijas otro producto, no añadas productos ni fases y no propongas alternativas.
+2. No es obligatorio cubrir todas las fases. Puedes OMITIR una entrada si la evidencia no la justifica para esta sesión. Máximo ${MAX_RECOMMENDATIONS} recomendaciones.
+2b. Un mismo producto se repite durante la sesión según "plan_calculado"; no sugieras alternar o combinar productos distintos de la misma función. Si una entrada "sustituye" porciones de otra, explícalo así (en lugar de, no además).
 3. Usa EXCLUSIVAMENTE la evidencia del contexto y cita sus refs C (y K si usas un fragmento). Cada recomendación debe citar al menos un claim de "evidencia_apoyo" de ese producto.
 4. No inventes beneficios. La ficha del fabricante nunca demuestra eficacia: solo indica forma o frecuencia de uso.
 5. La evidencia de un ingrediente o de una formulación NO es evidencia directa del producto: dilo así.
@@ -132,7 +144,6 @@ export function validateEvidenceResponse(response, { refs, shortlist }) {
   const chunkByRef = new Map([...refs.chunks.values()].map((k) => [k.ref, k]));
   const accepted = [];
   const discarded = [];
-  const perPhase = {};
   const usedProducts = new Set();
 
   for (const rec of Array.isArray(response?.recommendations) ? response.recommendations : []) {
@@ -144,8 +155,7 @@ export function validateEvidenceResponse(response, { refs, shortlist }) {
     if (!pair) { reject(`par no elegible (${rec?.product_ref ?? rec?.product_id}/${rec?.consumption_timing})`); continue; }
     if (rec.consumption_timing && rec.consumption_timing !== pair.phase) { reject('fase distinta de la elegible'); continue; }
     if (Number(rec.product_id) && Number(rec.product_id) !== pair.product_id) { reject('product_id no coincide con la ref'); continue; }
-    if (usedProducts.has(pair.product_id)) { reject('producto repetido'); continue; }
-    if ((perPhase[pair.phase] || 0) >= (MAX_PER_PHASE[pair.phase] ?? 1)) { reject(`límite de la fase ${pair.phase}`); continue; }
+    if (usedProducts.has(`${pair.product_id}|${pair.phase}`)) { reject('producto repetido en la misma fase'); continue; }
     if (accepted.length >= MAX_RECOMMENDATIONS) { reject('máximo de recomendaciones'); continue; }
 
     const supportIds = new Set(pair.supporting.map((s) => s.claim.claim_id));
@@ -178,8 +188,7 @@ export function validateEvidenceResponse(response, { refs, shortlist }) {
       evidence_note: truncate(String(rec.evidence_note || ''), 400),
       timing_minutes: Number.isInteger(minutes) && minutes >= 0 && minutes <= 180 ? minutes : null,
     });
-    perPhase[pair.phase] = (perPhase[pair.phase] || 0) + 1;
-    usedProducts.add(pair.product_id);
+    usedProducts.add(`${pair.product_id}|${pair.phase}`);
   }
   accepted.sort((a, b) => PHASE_ORDER.indexOf(a.pair.phase) - PHASE_ORDER.indexOf(b.pair.phase));
   return { accepted, discarded };

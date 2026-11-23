@@ -199,14 +199,30 @@ perfil + sesión → productos candidatos → ingredientes/formulaciones
 
 No se heredan instrucciones entre sabores o variantes salvo que la propia fuente oficial lo declare.
 
-### 7.3 Número de recomendaciones
+### 7.3 Huecos (fase + función) y número de recomendaciones
 
-Sin mínimo y sin relleno de fases. Máximo 5: una por fase y hasta 2 en "durante" (nutrientes distintos); un producto una sola vez. `daily_chronic` nunca se deriva de la categoría del producto.
+Cada par elegible se asigna a un **hueco** = fase + función neutra, derivada del nutriente y del momento (no del tipo de producto):
+
+| Nutriente | Momento | Función |
+|---|---|---|
+| carbohydrate | antes, durante (y después) | `fueling` |
+| protein | antes, después | `protein_support` |
+| sodium | cualquiera | `hydration` |
+| caffeine | cualquiera | `caffeine` |
+| cualquiera | `daily_chronic` | `supplementation` |
+
+- **1 principal por hueco**, elegido de forma determinista **antes** del LLM. Orden: banda principal > contextual; nivel de evidencia; relación (producto > formulación > ingrediente); `cadence_verified`; parte del objetivo alcanzable con la cadencia oficial; menos porciones; condiciones estructuradas; cubrir también la cafeína (o no aportar cafeína no buscada); feedback positivo; puntuación (la similitud vectorial solo entra aquí, al final). Las restricciones dietéticas y el feedback negativo excluyen antes.
+- **Hasta 2 alternativas** del mismo hueco ("en lugar de, no además"), con el motivo de no ser la principal. No cuentan en el máximo y Gemini no puede cambiarlas por la principal.
+- **Un producto que cubre varias funciones** de su fase ocupa todos esos huecos como una sola recomendación (`also_covers`).
+- **Repetición:** el mismo producto se repite según porciones/h = objetivo del claim ÷ gramos por porción; nunca se obliga a variar. Un producto puede aparecer en fases distintas, nunca dos veces en la misma.
+- **Cafeína acumulada:** se suman todas las porciones de todos los principales y fases. El máximo es el de los claims revisados aplicables a los momentos en que se consume (sin frontera fija). Si el plan necesario lo supera, el producto se descarta (y no aparece como alternativa); si solo lo supera el extremo alto, se limitan las porciones/h. Si la cafeína ya alcanza la banda, no se añade otro producto cafeinado. Un producto cafeinado con carbohidrato cuenta dentro del objetivo de carbohidrato y sustituye porciones del principal.
+- Sin mínimo y sin relleno de fases. Máximo 5 principales. `daily_chronic` nunca se deriva de la categoría del producto.
 
 ### 7.4 Trazabilidad
 
 - `recommendation_evidence`: `recommendation_id`, `source_id`, `claim_id`, `chunk_id`, `relation_type`, `role` (`supports`, `caveat`, `dose_reference`, `usage_constraint`), `similarity`, `score`, `rank`. Un trigger impide registrar al fabricante como respaldo (solo `usage_constraint`).
 - `recommendations.evidence_mode` (`legacy` / `evidence_rag`), `cadence_status`, `evidence_note`.
+- `recommendations.functional_role`, `also_covers`, `target` (objetivo del claim) y `usage_plan` (plan del servidor); `recommendation_alternatives` (migración 016).
 - `training_sessions.recommendation_status` (`pending`, `ready`, `none`, `failed`) permite al frontend distinguir "generando" de "sin evidencia suficiente".
 - La API devuelve en cada recomendación `evidence[]` (título, año, tipo, resumen, DOI/URL, rol), sin similitud ni datos técnicos.
 

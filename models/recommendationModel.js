@@ -17,7 +17,17 @@ const EVIDENCE_JSON = `
              ORDER BY x.claim_id, x.role, x.rank NULLS LAST) re
       JOIN evidence_sources s ON s.source_id = re.source_id
       LEFT JOIN evidence_claims c ON c.claim_id = re.claim_id
-  ), '[]'::json) AS evidence`;
+  ), '[]'::json) AS evidence,
+  r.functional_role AS role,
+  COALESCE((
+    SELECT json_agg(json_build_object(
+             'product_id', ra.product_id, 'product_name', ap.name, 'image_url', ap.image_url,
+             'cadence_status', ra.cadence_status, 'usage_plan', ra.usage_plan, 'reason', ra.reason)
+           ORDER BY ra.rank)
+      FROM recommendation_alternatives ra
+      JOIN products ap ON ap.product_id = ra.product_id
+     WHERE ra.recommendation_id = r.recommendation_id
+  ), '[]'::json) AS alternatives`;
 
 class Recommendation extends BaseModel {
   static tableName = 'recommendations';
@@ -78,18 +88,29 @@ class Recommendation extends BaseModel {
 
   static async insertRecommendation(client, input) {
     const { userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes,
-      evidence_mode = 'legacy', cadence_status = null, evidence_note = null, evidence = [] } =
+      evidence_mode = 'legacy', cadence_status = null, evidence_note = null, evidence = [],
+      functional_role = null, also_covers = [], target = null, usage_plan = null, alternatives = [] } =
       this.normalizeRecommendationInput(input);
     const { rows } = await client.query(
       `INSERT INTO recommendations
       (user_id, session_id, product_id, feedback, feedback_notes, consumption_timing, consumption_instructions, recommended_quantity, timing_minutes, recommended_at,
-       evidence_mode, cadence_status, evidence_note)
-      VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW(), $9, $10, $11)
+       evidence_mode, cadence_status, evidence_note, functional_role, also_covers, target, usage_plan)
+      VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW(), $9, $10, $11, $12, $13, $14, $15)
       RETURNING recommendation_id`,
       [userId, sessionId, productId, feedbackNotes, timing, consumption_instructions, quantity, minutes,
-       evidence_mode, cadence_status, evidence_note ? String(evidence_note).slice(0, 1000) : null]
+       evidence_mode, cadence_status, evidence_note ? String(evidence_note).slice(0, 1000) : null,
+       functional_role, also_covers || [], target ? JSON.stringify(target) : null, usage_plan ? JSON.stringify(usage_plan) : null]
     );
     const recommendationId = rows[0].recommendation_id;
+    // Alternativas del mismo hueco (en lugar de, no además): no son recomendaciones
+    for (const [i, alt] of (functional_role ? alternatives : []).slice(0, 2).entries()) {
+      await client.query(
+        `INSERT INTO recommendation_alternatives (recommendation_id, product_id, rank, cadence_status, usage_plan, reason)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [recommendationId, alt.product_id, i + 1, alt.cadence_status ?? null,
+         alt.usage_plan ? JSON.stringify(alt.usage_plan) : null, String(alt.reason || 'alternativa del mismo hueco').slice(0, 500)]
+      );
+    }
     for (const e of evidence) {
       await client.query(
         `INSERT INTO recommendation_evidence (recommendation_id, source_id, claim_id, chunk_id, relation_type, role, similarity, score, rank)

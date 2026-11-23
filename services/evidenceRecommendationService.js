@@ -1,22 +1,19 @@
 // services/evidenceRecommendationService.js — Flujo Evidence RAG (solo con USE_EVIDENCE_RAG=true).
 //
 // perfil + sesión → productos candidatos → ingredientes/formulaciones → elegibilidad basada en claims revisados
-// → similitud pgvector (chunks revisados de esos sujetos) → ranking → contexto → Gemini (o respaldo determinista)
-// → validación → recomendaciones con su evidencia (recommendation_evidence).
+// → similitud pgvector (chunks revisados de esos sujetos) → ranking → huecos fase + función (1 principal, hasta 2
+// alternativas, cafeína acumulada) → contexto → Gemini redacta (o respaldo determinista) → validación → recomendaciones con su evidencia (recommendation_evidence).
 import pool from '../config/db.js';
 import { generateEmbedding, TASK_TYPES } from './embeddingServices.js';
 import { searchEvidenceChunks } from './evidenceRetrievalService.js';
 import {
-  normalizeSession, loadEligibilityInputs, computeEligibility, selectRecommendations,
-  PHASE_ORDER, PHASE_TO_TIMING, MAX_PER_PHASE,
+  normalizeSession, loadEligibilityInputs, computeEligibility, selectSlots,
+  PHASE_ORDER, PHASE_TO_TIMING,
 } from './evidenceEligibilityService.js';
 import { buildEvidenceContext, buildEvidencePrompt, validateEvidenceResponse, buildDeterministicResponse } from './evidencePromptService.js';
 import { callLLMJson, isLLMAvailable } from './llmService.js';
 import { passesHardFilters } from './retrievalService.js';
 import Feedback from '../models/feedbackModel.js';
-
-const SHORTLIST_PER_PHASE = { antes: 2, durante: 3, despues: 2, diario: 1 };
-const MAX_SHORTLIST = 10;
 
 let llmOverride = null;
 /** Solo pruebas: sustituye la llamada al LLM por una función ({ prompt, context, refs, selected }) → respuesta. */
@@ -73,22 +70,6 @@ export function buildSessionQueryText(profile, session) {
   ].filter(Boolean).join('; ');
 }
 
-function shortlistByPhase(eligible) {
-  const out = [];
-  const perPhase = {};
-  const seen = new Set();
-  for (const pair of eligible) {
-    const key = `${pair.product_id}|${pair.phase}`;
-    if (seen.has(key)) continue;
-    if ((perPhase[pair.phase] || 0) >= (SHORTLIST_PER_PHASE[pair.phase] ?? 1)) continue;
-    out.push(pair);
-    seen.add(key);
-    perPhase[pair.phase] = (perPhase[pair.phase] || 0) + 1;
-    if (out.length >= MAX_SHORTLIST) break;
-  }
-  return out;
-}
-
 function summarizeOmittedPhases(finalPhases, eligible, rejected) {
   return PHASE_ORDER.filter((p) => !finalPhases.has(p)).map((phase) => {
     if (phase === 'diario') {
@@ -106,6 +87,51 @@ function summarizeOmittedPhases(finalPhases, eligible, rejected) {
 }
 
 /** Filas de recommendation_evidence para una recomendación aceptada. */
+/** Quita del plan las sustituciones que apuntan a recomendaciones que el LLM omitió. */
+function planForAccepted(plan, acceptedIds) {
+  if (!plan) return plan;
+  const out = { ...plan };
+  if (out.includes) out.includes = out.includes.filter((x) => acceptedIds.has(x.product_id));
+  if (out.includes && !out.includes.length) delete out.includes;
+  if (out.replaces && !acceptedIds.has(out.replaces.product_id)) delete out.replaces;
+  return out;
+}
+
+/** Cafeína total de la sesión: suma de todas las porciones de todas las recomendaciones finales. */
+export function sessionCaffeine(recommendations, session, band = null) {
+  const parts = recommendations.map((r) => r.usage_plan?.caffeine).filter(Boolean);
+  if (!parts.length) return null;
+  const sum = (k) => parts.reduce((t, p) => t + (p[k] || 0), 0);
+  const w = session?.weightKg;
+  return { mg_min: sum('mg_min'), mg_max: sum('mg_max'),
+    mg_per_kg_min: w ? Math.round((sum('mg_min') / w) * 100) / 100 : null,
+    mg_per_kg_max: w ? Math.round((sum('mg_max') / w) * 100) / 100 : null, band };
+}
+
+/** Recomendación Evidence RAG → entrada de Recommendation.createRecommendationsBatch (mismo formato en todos los flujos). */
+export function toRecommendationInput(rec, { userId, sessionId = null }) {
+  return {
+    userId,
+    sessionId,
+    productId: rec.product_id,
+    reason: rec.reasoning,
+    consumption_timing: rec.consumption_timing,
+    consumption_instructions: [rec.interval_minutes ? `[interval_minutes=${rec.interval_minutes}]` : null, rec.instructions]
+      .filter(Boolean).join(' ') || null,
+    recommended_quantity: rec.quantity,
+    timing_minutes: rec.timing_minutes,
+    evidence_mode: 'evidence_rag',
+    cadence_status: rec.cadence_status,
+    evidence_note: rec.evidence_note,
+    functional_role: rec.role,
+    also_covers: rec.also_covers || [],
+    target: rec.target || null,
+    usage_plan: rec.usage_plan || null,
+    alternatives: rec.alternatives || [],
+    evidence: rec.evidence,
+  };
+}
+
 export function buildEvidenceRows(accepted) {
   const rows = [];
   let rank = 0;
@@ -148,7 +174,7 @@ export async function generateEvidenceRecommendations({ profile = {}, trainingDa
   const inputs = await loadEligibilityInputs(candidates.map((p) => p.product_id), { client });
   // Solo validación previa a una ingesta: aplica en memoria cambios de manifiesto aún no ingeridos (no escribe nada)
   if (typeof transformInputs === 'function') transformInputs(inputs);
-  let { eligible, rejected } = computeEligibility(inputs, session, { positiveProductIds });
+  let { eligible, rejected, caffeineBands } = computeEligibility(inputs, session, { positiveProductIds });
 
   if (!eligible.length) {
     return {
@@ -176,10 +202,12 @@ export async function generateEvidenceRecommendations({ profile = {}, trainingDa
     const sims = (claim.chunk_ids || []).map((id) => chunkHits.get(id)?.similarity).filter((x) => x != null);
     if (sims.length) similarity.set(claim.claim_id, Math.max(...sims));
   }
-  ({ eligible, rejected } = computeEligibility(inputs, session, { similarity, positiveProductIds }));
+  ({ eligible, rejected, caffeineBands } = computeEligibility(inputs, session, { similarity, positiveProductIds }));
 
-  const shortlist = shortlistByPhase(eligible);
-  const selected = selectRecommendations(shortlist);
+  // La selección del principal de cada hueco es determinista y previa al LLM: Gemini solo redacta u omite.
+  const slotResult = selectSlots(eligible, { session, caffeineBands });
+  const selected = slotResult.selected;
+  const shortlist = selected;
 
   // Fragmentos recuperables de los claims del contexto (solo evidencia revisada)
   const contextClaimIds = [...new Set(shortlist.flatMap((p) => p.supporting.map((s) => s.claim.claim_id)))];
@@ -233,6 +261,7 @@ export async function generateEvidenceRecommendations({ profile = {}, trainingDa
     ({ accepted } = validateEvidenceResponse(buildDeterministicResponse({ selected, refs }), { refs, shortlist }));
   }
 
+  const acceptedIds = new Set(accepted.map((a) => a.pair.product_id));
   const recommendations = accepted.map((a) => ({
     product_id: a.pair.product_id,
     product_name: a.pair.product_name,
@@ -245,6 +274,13 @@ export async function generateEvidenceRecommendations({ profile = {}, trainingDa
     evidence_note: a.evidence_note || null,
     cadence_status: a.pair.status,
     nutrient: a.pair.nutrient,
+    role: a.pair.role,
+    also_covers: a.pair.also_covers,
+    target: a.pair.target,
+    also_meets: a.pair.also_meets,
+    usage_plan: planForAccepted(a.pair.usage_plan, acceptedIds),
+    alternatives: a.pair.alternatives,
+    warnings: a.pair.warnings,
     evidence: buildEvidenceRows(a),
   }));
   const finalPhases = new Set(recommendations.map((r) => r.consumption_timing));
@@ -265,6 +301,7 @@ export async function generateEvidenceRecommendations({ profile = {}, trainingDa
     mode,
     discarded,
     candidateStats,
-    maxPerPhase: MAX_PER_PHASE,
+    caffeine: sessionCaffeine(recommendations, session, slotResult.caffeine?.band),
+    slotDecisions: slotResult.decisions,
   };
 }

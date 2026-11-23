@@ -18,7 +18,6 @@ export const PHASE_TO_TIMING = Object.fromEntries(Object.entries(TIMING_TO_PHASE
 export const PHASE_ORDER = ['antes', 'durante', 'despues', 'diario'];
 
 export const MAX_RECOMMENDATIONS = 5;
-export const MAX_PER_PHASE = { antes: 1, durante: 2, despues: 1, diario: 1 };
 
 /** Pesos del ranking (documentados en data/evidence/README.md). */
 export const LEVEL_WEIGHT = { A: 1.0, B: 0.85, C: 0.6, D: 0.3 };
@@ -380,10 +379,12 @@ export function computeEligibility({ products, claims, roleMatrix }, session, { 
       const rate = doseClaims.filter((v) => v.dose.kind === 'rate');
       let plan;
       let used;
+      let dose;
       if (rate.length) {
         const lo = Math.min(...rate.map((v) => v.dose.lo));
         const hi = Math.max(...rate.map((v) => v.dose.hi ?? v.dose.lo));
-        plan = computePlan({ dose: { kind: 'rate', unit: 'g/h', lo, hi }, amount: g.amount, session, status: g.status, cadence: g.cadence, nutrient: g.nutrient });
+        dose = { kind: 'rate', unit: 'g/h', lo, hi };
+        plan = computePlan({ dose, amount: g.amount, session, status: g.status, cadence: g.cadence, nutrient: g.nutrient });
         used = rate;
       } else {
         const tried = doseClaims.map((v) => ({ v, plan: computePlan({ dose: v.dose, amount: g.amount, session, status: g.status, cadence: g.cadence, nutrient: g.nutrient }) }));
@@ -396,6 +397,7 @@ export function computeEligibility({ products, claims, roleMatrix }, session, { 
         const principal = ok.filter((t) => t.v.dose.tier === 'principal');
         const chosen = principal.length ? principal : ok;
         plan = chosen[0].plan;
+        dose = chosen[0].v.dose;
         used = chosen.map((t) => t.v);
       }
       if (!plan.viable) {
@@ -407,7 +409,7 @@ export function computeEligibility({ products, claims, roleMatrix }, session, { 
         const tier = v.dose?.tier || 'principal';
         const w = claimWeight(v.claim, v.relation, v.cond, tier);
         const sim = similarity.get(v.claim.claim_id) ?? 0;
-        return { claim: v.claim, relation: v.relation, tier, weight: w, similarity: sim, score: w * (0.5 + 0.5 * sim) };
+        return { claim: v.claim, relation: v.relation, tier, weight: w, similarity: sim, score: w * (0.5 + 0.5 * sim), structured: !!v.cond?.structured };
       }).sort((a, b) => b.score - a.score);
 
       const doseRefs = used.flatMap((v) => v.dose?.refs || []).map((r) => r.claim);
@@ -440,36 +442,347 @@ export function computeEligibility({ products, claims, roleMatrix }, session, { 
         amount: g.amount,
         status: g.status,
         tier,
+        dose: { kind: dose.kind, unit: dose.unit, lo: dose.lo, hi: dose.hi ?? null },
         plan,
         instruction: g.instruction,
         supporting,
         doseRefs,
         caveats,
         warnings: plan.warnings || [],
+        positive: positiveProductIds.includes(g.product.product_id),
+        caffeine_mg_per_serving: caffeineMgPerServing(g.product),
+        carbohydrate_per_serving: servingAmount(g.product, 'carbohydrate')?.amount ?? 0,
         score: Math.round(score * 10000) / 10000,
       });
     }
   }
   eligible.sort((a, b) => b.score - a.score || a.product_id - b.product_id);
-  return { eligible, rejected };
+  return { eligible, rejected, caffeineBands: caffeineBandsFor(claims, session) };
 }
 
-/** Selección final: máximo 5, sin mínimo, una por producto, límites por fase. Nunca rellena fases. */
-export function selectRecommendations(eligible, { max = MAX_RECOMMENDATIONS } = {}) {
-  const chosen = [];
-  const perPhase = {};
-  const usedProducts = new Set();
-  for (const pair of eligible) {
-    if (chosen.length >= max) break;
-    if (usedProducts.has(pair.product_id)) continue;
-    const count = perPhase[pair.phase] || 0;
-    if (count >= (MAX_PER_PHASE[pair.phase] ?? 1)) continue;
-    if (count === 1 && chosen.some((c) => c.phase === pair.phase && c.nutrient === pair.nutrient)) continue;
-    chosen.push(pair);
-    perPhase[pair.phase] = count + 1;
-    usedProducts.add(pair.product_id);
+// ------------------------------------------------------------------ Huecos: fase + función
+/**
+ * Función neutra de un par (nutriente, momento). No es el rol del tipo de producto: es el objetivo nutricional que
+ * cubre la recomendación. La UI la traduce según la fase (p. ej. después + protein_support → "Recuperación proteica").
+ * El orden de la lista es el orden de llenado: la cafeína va al final para conocer la cafeína ya acumulada.
+ */
+export const FUNCTIONS = ['fueling', 'protein_support', 'hydration', 'supplementation', 'caffeine'];
+const FUNCTION_BY_NUTRIENT = { carbohydrate: 'fueling', protein: 'protein_support', sodium: 'hydration', caffeine: 'caffeine' };
+export function functionOf(nutrient, timing) {
+  if (timing === 'daily_chronic') return 'supplementation';
+  return FUNCTION_BY_NUTRIENT[nutrient] || 'supplementation';
+}
+export const MAX_ALTERNATIVES = 2;
+
+/** Cafeína declarada por porción, en mg (0 si no tiene). */
+export function caffeineMgPerServing(product) {
+  const a = servingAmount(product, 'caffeine');
+  if (!a || !(a.amount > 0)) return 0;
+  return a.unit === 'g' ? a.amount * 1000 : a.amount;
+}
+
+/** Cafeína que aporta un plan durante toda la sesión: todas las porciones, no solo una. */
+export function caffeineOfPlan(mgPerServing, plan, session) {
+  if (!mgPerServing) return { min: 0, max: 0 };
+  if (plan.type === 'rate') {
+    const hours = session?.durationMin ? session.durationMin / 60 : 1;
+    return { min: plan.servings_per_hour[0] * hours * mgPerServing, max: plan.servings_per_hour[1] * hours * mgPerServing };
   }
-  return chosen.sort((a, b) => PHASE_ORDER.indexOf(a.phase) - PHASE_ORDER.indexOf(b.phase) || b.score - a.score);
+  const n = plan.servings ?? 1;
+  return { min: n * mgPerServing, max: n * mgPerServing };
+}
+
+/**
+ * Bandas de cafeína (mg/kg) de los claims revisados aplicables a la sesión. Son las únicas fronteras que se usan:
+ * el mínimo con respaldo (cualquier banda) y el máximo que declara algún claim. Sin bandas no hay frontera.
+ */
+export function caffeineBandsFor(claims, session) {
+  const bands = [];
+  for (const c of claims) {
+    if (c.ingredient_code !== 'caffeine') continue;
+    for (const t of c.justified_timings || []) {
+      if (!conditionsMatch(c, session).ok) continue;
+      const d = resolveDose(c, t, claims);
+      if (d?.kind === 'per_kg') bands.push({ timing: t, lo: d.lo, hi: d.hi, tier: d.tier, claim_id: c.claim_id });
+    }
+  }
+  return bands;
+}
+
+const floor1 = (x) => Math.floor(x * 10 + 1e-9) / 10;
+
+/** Limita las porciones/h máximas de un plan por hora (p. ej. por la cafeína acumulada). */
+function capRatePlan(plan, maxPerHour, amount, nutrient) {
+  const hi = Math.max(plan.servings_per_hour[0], floor1(maxPerHour));
+  const gLo = plan.achievable_g_per_hour[0];
+  const gHi = round(hi * amount.amount, 0);
+  return { ...plan, servings_per_hour: [plan.servings_per_hour[0], hi], achievable_g_per_hour: [gLo, gHi],
+    quantity: `${plan.servings_per_hour[0]}–${hi} porciones/h (≈${gLo}–${gHi} g/h de ${NUTRIENT_LABEL[nutrient] || nutrient})` };
+}
+
+const TARGET_UNIT = { rate: 'g/h', per_kg: 'mg/kg', concentration: 'mg/L' };
+/** Objetivo derivado del claim (no del producto). */
+export function targetOf(pair) {
+  const d = pair.dose || {};
+  return { nutrient: pair.nutrient, min: d.lo ?? null, max: d.hi ?? null, unit: TARGET_UNIT[d.kind] || d.unit || null, tier: pair.tier };
+}
+
+/** Plan de uso calculado por el servidor (porciones/h, intervalo, totales, cafeína acumulada del producto). */
+export function usagePlanOf(pair, session, caffeine) {
+  const p = pair.plan;
+  const hours = session?.durationMin ? session.durationMin / 60 : null;
+  const base = p.type === 'rate'
+    ? {
+      type: 'rate',
+      servings_per_hour_min: p.servings_per_hour[0],
+      servings_per_hour_max: p.servings_per_hour[1],
+      interval_minutes_min: Math.round(60 / p.servings_per_hour[1]),
+      interval_minutes_max: Math.round(60 / p.servings_per_hour[0]),
+      achievable: { min: p.achievable_g_per_hour[0], max: p.achievable_g_per_hour[1], unit: 'g/h' },
+      servings_total_min: hours ? round(p.servings_per_hour[0] * hours) : null,
+      servings_total_max: hours ? round(p.servings_per_hour[1] * hours) : null,
+      repeat_same_product: true,
+    }
+    : {
+      type: 'servings',
+      servings: p.servings,
+      ...(p.concentration_mg_per_l != null ? { concentration_mg_per_l: p.concentration_mg_per_l } : {}),
+      ...(p.dose_mg_per_kg != null ? { dose_mg_per_kg: p.dose_mg_per_kg } : {}),
+    };
+  const w = session?.weightKg;
+  return {
+    ...base,
+    per_serving: { nutrient: pair.nutrient, amount: pair.amount.amount, unit: pair.amount.unit || null },
+    caffeine: caffeine && caffeine.max > 0
+      ? { mg_min: round(caffeine.min, 0), mg_max: round(caffeine.max, 0),
+        mg_per_kg_min: w ? round(caffeine.min / w, 2) : null, mg_per_kg_max: w ? round(caffeine.max / w, 2) : null }
+      : null,
+    text: p.quantity,
+  };
+}
+
+// Orden de desempate del principal de un hueco (de más a menos importante). La similitud vectorial solo entra al
+// final, dentro de "score". Cada criterio: [motivo si la alternativa pierde en él, valor (mayor = mejor)].
+const bestOf = (pair, f) => Math.max(...pair.supporting.map(f));
+const RANK_CRITERIA = [
+  ['banda de evidencia contextual (respaldo menor)', (c) => (c.pair.tier === 'principal' ? 1 : 0)],
+  ['evidencia científica menos fuerte', (c) => bestOf(c.pair, (s) => LEVEL_WEIGHT[s.claim.source_evidence_level] ?? 0.5)],
+  ['relación con la evidencia menos directa', (c) => bestOf(c.pair, (s) => RELATION_WEIGHT[s.relation] ?? 0.5)],
+  ['cadencia no verificada por la ficha oficial', (c) => (c.pair.status === 'cadence_verified' ? 1 : 0)],
+  ['alcanza menos del objetivo con la cadencia oficial', (c) => (c.pair.plan.type === 'rate'
+    ? c.pair.plan.achievable_g_per_hour[1] / (c.pair.plan.target_g_per_hour[1] || 1) : 1)],
+  ['necesita más porciones para el mismo objetivo', (c) => -(c.pair.plan.type === 'rate' ? c.pair.plan.servings_per_hour[0] : (c.pair.plan.servings ?? 1))],
+  ['condiciones del claim menos específicas para esta sesión', (c) => (c.pair.supporting.some((s) => s.structured) ? 1 : 0)],
+  ['no cubre a la vez la cafeína, o aporta cafeína que no se busca en este hueco', (c) => c.caffeineFit],
+  ['sin feedback positivo del usuario', (c) => (c.pair.positive ? 1 : 0)],
+  ['menor puntuación de evidencia (incluye similitud semántica)', (c) => c.pair.score],
+  ['', (c) => -c.pair.product_id],
+];
+function compareCandidates(a, b) {
+  for (const [, f] of RANK_CRITERIA) {
+    const d = f(b) - f(a);
+    if (Math.abs(d) > 1e-9) return d;
+  }
+  return 0;
+}
+function lossReason(primary, alt) {
+  for (const [label, f] of RANK_CRITERIA) {
+    if (Math.abs(f(primary) - f(alt)) > 1e-9) return label || 'evidencia y plan equivalentes (desempate estable)';
+  }
+  return 'evidencia y plan equivalentes (desempate estable)';
+}
+
+const mergeBy = (lists, key) => {
+  const seen = new Set();
+  return lists.flat().filter((x) => (seen.has(key(x)) ? false : seen.add(key(x))));
+};
+
+/**
+ * Selección por huecos (fase + función): 1 principal por hueco, hasta 2 alternativas (no cuentan), máximo 5
+ * principales y una recomendación por producto. Un producto que cubre varias funciones de su fase ocupa todos esos
+ * huecos como UNA recomendación. La cafeína se acumula en toda la sesión (todas las porciones y fases) y solo se
+ * limita con las bandas de los claims revisados. Nunca rellena fases ni obliga a variar de producto.
+ */
+export function selectSlots(eligible, { session = {}, caffeineBands = [], max = MAX_RECOMMENDATIONS, maxAlternatives = MAX_ALTERNATIVES } = {}) {
+  const w = session.weightKg;
+  const hours = session.durationMin ? session.durationMin / 60 : 1;
+  // Bandas de los claims que aplican a los momentos en que se consume cafeína (si ninguna aplica a ese momento,
+  // las de la sesión). Nunca una frontera que no declare un claim revisado.
+  const bandsFor = (timings) => {
+    const own = caffeineBands.filter((b) => timings.has(b.timing));
+    return own.length ? own : caffeineBands;
+  };
+  const coverLoFor = (timings) => { const b = bandsFor(timings); return b.length ? Math.min(...b.map((x) => x.lo)) : null; };
+  const budgetFor = (timings) => {
+    const his = bandsFor(timings).map((x) => x.hi).filter((x) => x != null);
+    return his.length ? Math.max(...his) : null;
+  };
+  const mgkg = (mg) => (w ? mg / w : null);
+  const decisions = [];
+
+  // Pares por producto y fase (uno por función) y candidatos por hueco
+  const byProductPhase = new Map();
+  for (const pair of eligible) {
+    const fn = functionOf(pair.nutrient, pair.timing);
+    const key = `${pair.product_id}|${pair.phase}`;
+    if (!byProductPhase.has(key)) byProductPhase.set(key, new Map());
+    const m = byProductPhase.get(key);
+    if (!m.has(fn) || m.get(fn).score < pair.score) m.set(fn, pair);
+  }
+  const slots = new Map();
+  for (const fns of byProductPhase.values()) {
+    for (const [fn, pair] of fns) {
+      const hasCaffeine = (pair.caffeine_mg_per_serving || 0) > 0;
+      const caffeineFit = fn === 'caffeine' || !hasCaffeine ? 0 : (fns.has('caffeine') ? 1 : -1);
+      const slotKey = `${pair.phase}|${fn}`;
+      if (!slots.has(slotKey)) slots.set(slotKey, { phase: pair.phase, fn, candidates: [] });
+      slots.get(slotKey).candidates.push({ fn, pair, fns, caffeineFit });
+    }
+  }
+  for (const s of slots.values()) s.candidates.sort(compareCandidates);
+
+  // Orden de llenado: por función y, dentro de cada función, por la puntuación de su mejor candidato
+  const order = [...slots.values()].sort((a, b) => FUNCTIONS.indexOf(a.fn) - FUNCTIONS.indexOf(b.fn)
+    || b.candidates[0].pair.score - a.candidates[0].pair.score || PHASE_ORDER.indexOf(a.phase) - PHASE_ORDER.indexOf(b.phase));
+
+  const chosen = [];
+  const filled = new Map(); // `${fase}|${función}` → recomendación
+  // Un producto puede repetirse en fases distintas (huecos distintos), pero no ocupar dos huecos de la misma fase
+  // salvo como also_covers de una única recomendación.
+  const usedProducts = new Set(); // `${producto}|${fase}`
+  const used = (pair) => usedProducts.has(`${pair.product_id}|${pair.phase}`);
+  const acc = { min: 0, max: 0, timings: new Set() }; // cafeína acumulada (mg) de los principales y sus momentos
+
+  // ¿Cabe la cafeína de este candidato (todas sus porciones) en la banda de los claims? Si el plan por hora solo
+  // excede en su extremo alto, se limitan las porciones/h; si el mínimo necesario ya excede, se descarta.
+  const fitCaffeine = (cand, base) => {
+    const perServing = cand.pair.caffeine_mg_per_serving || 0;
+    let plan = cand.pair.plan;
+    let c = caffeineOfPlan(perServing, plan, session);
+    if (!perServing) return { ok: true, plan, caffeine: c, warnings: [] };
+    const timings = new Set([...base.timings, cand.pair.timing]);
+    const budgetHi = budgetFor(timings);
+    if (budgetHi == null || !w) {
+      return { ok: true, plan, caffeine: c, warnings: ['Sin claim revisado de cafeína aplicable (o sin peso) para acotar la cafeína acumulada.'] };
+    }
+    const totalMin = mgkg(base.min + c.min);
+    if (totalMin > budgetHi + 1e-9) {
+      const how = plan.type === 'rate' ? `${plan.servings_per_hour[0]} porciones/h durante ${round(hours)} h` : `${plan.servings ?? 1} porción(es)`;
+      return { ok: false, reason: `con el plan necesario (${how}) la cafeína acumulada de la sesión sería ${round(totalMin, 2)} mg/kg y los claims revisados aplicables admiten como máximo ${budgetHi} mg/kg` };
+    }
+    const warnings = [];
+    if (mgkg(base.max + c.max) > budgetHi + 1e-9) {
+      if (plan.type !== 'rate') return { ok: false, reason: `la cafeína acumulada superaría ${budgetHi} mg/kg` };
+      plan = capRatePlan(plan, (budgetHi * w - base.max) / (hours * perServing), cand.pair.amount, cand.pair.nutrient);
+      c = caffeineOfPlan(perServing, plan, session);
+      warnings.push(`Porciones/h limitadas a ${plan.servings_per_hour[1]} para que la cafeína acumulada no supere ${budgetHi} mg/kg.`);
+    }
+    return { ok: true, plan, caffeine: c, warnings };
+  };
+
+  for (const slot of order) {
+    const slotKey = `${slot.phase}|${slot.fn}`;
+    if (filled.has(slotKey)) continue;
+    const slotTiming = slot.candidates[0].pair.timing;
+    const coverLo = coverLoFor(new Set([slotTiming]));
+    if (slot.fn === 'caffeine' && coverLo != null && w && mgkg(acc.min) >= coverLo - 1e-9) {
+      decisions.push({ slot: slotKey, reason: `cafeína ya cubierta por los productos principales (${round(mgkg(acc.min), 2)} mg/kg); no se añade otro producto cafeinado` });
+      continue;
+    }
+    if (chosen.length >= max) { decisions.push({ slot: slotKey, reason: `máximo de ${max} recomendaciones principales` }); continue; }
+
+    for (const cand of slot.candidates) {
+      if (used(cand.pair)) continue;
+      const fit = fitCaffeine(cand, acc);
+      if (!fit.ok) {
+        cand.excluded = fit.reason;
+        decisions.push({ slot: slotKey, product_id: cand.pair.product_id, excluded: true, reason: fit.reason });
+        continue;
+      }
+      const pair = fit.plan === cand.pair.plan ? cand.pair : { ...cand.pair, plan: fit.plan };
+      // Otras funciones de la misma fase que el mismo producto también cubre (si su hueco sigue libre)
+      const alsoPairs = [];
+      for (const [fn, other] of cand.fns) {
+        if (fn === slot.fn || filled.has(`${slot.phase}|${fn}`)) continue;
+        if (fn === 'caffeine') {
+          // Cubre la cafeína solo si la cafeína acumulada (todas sus porciones) alcanza la banda de los claims
+          const total = mgkg(acc.min + fit.caffeine.min);
+          if (coverLo == null || total == null || total < coverLo - 1e-9) continue;
+        }
+        alsoPairs.push({ fn, pair: other });
+      }
+      const rec = {
+        ...pair,
+        role: slot.fn,
+        also_covers: alsoPairs.map((a) => a.fn),
+        also_pairs: alsoPairs.map((a) => a.pair),
+        supporting: mergeBy([pair.supporting, ...alsoPairs.map((a) => a.pair.supporting)], (s) => s.claim.claim_id),
+        caveats: mergeBy([pair.caveats, ...alsoPairs.map((a) => a.pair.caveats)], (c) => c.claim.claim_id),
+        doseRefs: mergeBy([pair.doseRefs, ...alsoPairs.map((a) => a.pair.doseRefs)], (c) => c.claim_id),
+        warnings: [...(pair.warnings || []), ...fit.warnings],
+        caffeine: fit.caffeine,
+        slotCandidate: cand,
+        target: targetOf(pair),
+        also_meets: alsoPairs.map((a) => targetOf(a.pair)),
+      };
+      chosen.push(rec);
+      usedProducts.add(`${pair.product_id}|${pair.phase}`);
+      filled.set(slotKey, rec);
+      alsoPairs.forEach((a) => filled.set(`${slot.phase}|${a.fn}`, rec));
+      acc.min += fit.caffeine.min;
+      acc.max += fit.caffeine.max;
+      if (fit.caffeine.max > 0) acc.timings.add(pair.timing);
+      break;
+    }
+  }
+
+  for (const rec of chosen) rec.usage_plan = usagePlanOf(rec, session, rec.caffeine);
+
+  // Alternativas: mismo hueco, en lugar de (no además). Nunca un producto descartado por su cafeína, ni otro principal.
+  for (const rec of chosen) {
+    const slot = slots.get(`${rec.phase}|${rec.role}`);
+    const base = { min: acc.min - rec.caffeine.min, max: acc.max - rec.caffeine.max, timings: acc.timings };
+    rec.alternatives = [];
+    for (const cand of slot.candidates) {
+      if (rec.alternatives.length >= maxAlternatives) break;
+      if (cand === rec.slotCandidate || used(cand.pair) || cand.excluded) continue;
+      const fit = fitCaffeine(cand, base);
+      if (!fit.ok) continue;
+      rec.alternatives.push({
+        product_id: cand.pair.product_id,
+        product_name: cand.pair.product_name,
+        cadence_status: cand.pair.status,
+        usage_plan: usagePlanOf({ ...cand.pair, plan: fit.plan }, session, fit.caffeine),
+        reason: lossReason(rec.slotCandidate, cand),
+      });
+    }
+  }
+
+  // Producto cafeinado con carbohidrato en la misma fase que el principal de combustible: sus gramos cuentan dentro
+  // del objetivo de carbohidrato y sustituyen porciones del principal (no se suman además).
+  for (const caf of chosen.filter((r) => r.role === 'caffeine')) {
+    const fuel = chosen.find((r) => r !== caf && r.phase === caf.phase && r.role === 'fueling' && r.nutrient === 'carbohydrate');
+    const cho = (caf.carbohydrate_per_serving || 0) * (caf.plan.servings ?? 1);
+    if (!fuel || !(cho > 0)) continue;
+    const replaces = round(cho / fuel.amount.amount);
+    caf.usage_plan.replaces = { product_id: fuel.product_id, product_name: fuel.product_name, servings: replaces, carbohydrate_g: round(cho, 0) };
+    fuel.usage_plan.includes = [...(fuel.usage_plan.includes || []),
+      { product_id: caf.product_id, product_name: caf.product_name, carbohydrate_g: round(cho, 0), replaces_servings: replaces }];
+  }
+
+  const selected = chosen.sort((a, b) => PHASE_ORDER.indexOf(a.phase) - PHASE_ORDER.indexOf(b.phase)
+    || FUNCTIONS.indexOf(a.role) - FUNCTIONS.indexOf(b.role));
+  const caffeine = acc.max > 0
+    ? { mg_min: round(acc.min, 0), mg_max: round(acc.max, 0), mg_per_kg_min: w ? round(acc.min / w, 2) : null,
+      mg_per_kg_max: w ? round(acc.max / w, 2) : null,
+      band: budgetFor(acc.timings) != null ? { min: coverLoFor(acc.timings), max: budgetFor(acc.timings), unit: 'mg/kg' } : null }
+    : null;
+  return { selected, decisions, caffeine };
+}
+
+/** Compatibilidad: solo las recomendaciones principales de selectSlots. */
+export function selectRecommendations(eligible, opts = {}) {
+  return selectSlots(eligible, opts).selected;
 }
 
 // ------------------------------------------------------------------ Carga de datos (solo lectura)

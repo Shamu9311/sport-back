@@ -2,7 +2,7 @@ import Recommendation from '../models/recommendationModel.js';
 import User from '../models/userModel.js';
 import { getRecommendationsFromLLM } from './llmService.js';
 import { isEvidenceRagEnabled } from './evidenceRetrievalService.js';
-import { generateEvidenceRecommendations } from './evidenceRecommendationService.js';
+import { generateEvidenceRecommendations, toRecommendationInput } from './evidenceRecommendationService.js';
 import Feedback from '../models/feedbackModel.js';
 
 /** Estado de generación de la sesión (solo Evidence RAG; el flujo antiguo no lo usa). */
@@ -166,21 +166,7 @@ export default class TrainingRecommendationService {
   static async generateWithEvidence(userId, sessionId, profile, trainingData, candidates) {
     const positiveProductIds = userId ? await Feedback.getPositiveFeedbackProducts(userId).catch(() => []) : [];
     const result = await generateEvidenceRecommendations({ profile, trainingData, candidates, positiveProductIds });
-    const inputs = result.recommendations.map((rec) => ({
-      userId,
-      sessionId,
-      productId: rec.product_id,
-      reason: rec.reasoning,
-      consumption_timing: rec.consumption_timing,
-      consumption_instructions: [rec.interval_minutes ? `[interval_minutes=${rec.interval_minutes}]` : null, rec.instructions]
-        .filter(Boolean).join(' ') || null,
-      recommended_quantity: rec.quantity,
-      timing_minutes: rec.timing_minutes,
-      evidence_mode: 'evidence_rag',
-      cadence_status: rec.cadence_status,
-      evidence_note: rec.evidence_note,
-      evidence: rec.evidence,
-    }));
+    const inputs = result.recommendations.map((rec) => toRecommendationInput(rec, { userId, sessionId }));
     const saved = await Recommendation.createRecommendationsBatch(inputs);
     const note = saved.length
       ? null

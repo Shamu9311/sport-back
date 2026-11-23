@@ -131,6 +131,15 @@ export async function runIntegrityChecks(client, { dump = null } = {}) {
        `SELECT COUNT(*)::int n FROM recommendation_evidence re JOIN evidence_sources s USING (source_id)
         LEFT JOIN evidence_claims c ON c.claim_id = re.claim_id
         WHERE re.role = 'supports' AND (s.review_status <> 'reviewed' OR c.review_status IS DISTINCT FROM 'reviewed')`],
+      ['Huecos (016): un principal por sesión + fase + función',
+       `SELECT COUNT(*)::int n FROM (
+          SELECT r.session_id, r.consumption_timing, f FROM recommendations r
+                 CROSS JOIN LATERAL unnest(array_prepend(r.functional_role, r.also_covers)) f
+           WHERE r.functional_role IS NOT NULL AND r.session_id IS NOT NULL
+           GROUP BY 1, 2, 3 HAVING COUNT(*) > 1) d`],
+      ['Alternativas (016): distintas del principal y solo en Evidence RAG',
+       `SELECT COUNT(*)::int n FROM recommendation_alternatives ra JOIN recommendations r USING (recommendation_id)
+        WHERE ra.product_id = r.product_id OR r.functional_role IS NULL`],
       ['product_ingredients con ingredientes activos',
        `SELECT COUNT(*)::int n FROM product_ingredients pi JOIN ingredients i USING (ingredient_id) WHERE NOT i.is_active`],
     ];

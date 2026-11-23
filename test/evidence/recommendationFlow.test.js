@@ -251,5 +251,34 @@ describe('Persistencia y compatibilidad con USE_EVIDENCE_RAG', () => {
       expect(x.review_status).toBe('reviewed');
       expect(x.claim_status).toBe('reviewed');
     });
+
+    // Huecos: 1 principal por fase + función, con objetivo y plan del servidor; las alternativas van aparte
+    const slots = recs.flatMap((r) => [r.role, ...(r.also_covers || [])].map((fn) => `${r.consumption_timing}|${fn}`));
+    expect(new Set(slots).size).toBe(slots.length);
+    for (const r of recs) {
+      expect(['fueling', 'hydration', 'protein_support', 'caffeine', 'supplementation']).toContain(r.role);
+      expect(r.functional_role).toBe(r.role);
+      expect(r.target?.nutrient).toBeTruthy();
+      expect(r.usage_plan?.text).toBeTruthy();
+      expect(Array.isArray(r.alternatives)).toBe(true);
+      r.alternatives.forEach((a) => expect(a.product_id).not.toBe(r.product_id));
+    }
+    const { rows: alts } = await pool.query(`SELECT ra.product_id, r.product_id AS primary_id FROM recommendation_alternatives ra
+      JOIN recommendations r USING (recommendation_id) WHERE r.session_id = $1`, [sessionId]);
+    expect(alts.length).toBe(recs.reduce((n, r) => n + r.alternatives.length, 0));
   }, 120000);
+
+  it('la BD impide alternativas en recomendaciones del flujo antiguo o iguales al principal', async () => {
+    const sessionId = await newSession();
+    const { rows: [legacy] } = await pool.query(`INSERT INTO recommendations (user_id, session_id, product_id, feedback_notes)
+      VALUES ($1, $2, 25, 'x') RETURNING recommendation_id`, [userId, sessionId]);
+    await expect(pool.query(`INSERT INTO recommendation_alternatives (recommendation_id, product_id, rank, reason)
+      VALUES ($1, 1, 1, 'x')`, [legacy.recommendation_id])).rejects.toThrow(/Evidence RAG/);
+    await expect(pool.query(`UPDATE recommendations SET functional_role = 'fueling' WHERE recommendation_id = $1`,
+      [legacy.recommendation_id])).rejects.toThrow(/recommendations_slot_only_evidence/);
+    const { rows: [rag] } = await pool.query(`INSERT INTO recommendations (user_id, session_id, product_id, feedback_notes, evidence_mode, functional_role)
+      VALUES ($1, $2, 25, 'x', 'evidence_rag', 'fueling') RETURNING recommendation_id`, [userId, sessionId]);
+    await expect(pool.query(`INSERT INTO recommendation_alternatives (recommendation_id, product_id, rank, reason)
+      VALUES ($1, 25, 1, 'x')`, [rag.recommendation_id])).rejects.toThrow(/producto principal/);
+  }, 60000);
 });

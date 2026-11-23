@@ -3,6 +3,14 @@ import Recommendation from '../models/recommendationModel.js';
 import TrainingRecommendationService from '../services/trainingRecommendationService.js';
 import { sendError, sendSuccess } from '../utils/apiResponse.js';
 
+/** Cafeína total de la sesión (Evidence RAG): suma de la cafeína de todas las porciones de las recomendaciones. */
+function caffeineTotal(recommendations) {
+  const parts = recommendations.map((r) => r.usage_plan?.caffeine).filter(Boolean);
+  if (!parts.length) return null;
+  const sum = (k) => Math.round(parts.reduce((t, p) => t + (p[k] || 0), 0) * 100) / 100;
+  return { mg_min: sum('mg_min'), mg_max: sum('mg_max'), mg_per_kg_min: sum('mg_per_kg_min'), mg_per_kg_max: sum('mg_per_kg_max') };
+}
+
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
 
 function validateTrainingFields(body, { requireAll = false } = {}) {
@@ -120,7 +128,8 @@ export const getSessionRecommendations = async (req, res) => {
     // meta solo se informa en Evidence RAG: permite al frontend distinguir "generando" de "sin evidencia suficiente"
     const session = req.trainingSession || {};
     const meta = session.recommendation_status
-      ? { recommendation_status: session.recommendation_status, recommendation_note: session.recommendation_note || null }
+      ? { recommendation_status: session.recommendation_status, recommendation_note: session.recommendation_note || null,
+        caffeine_total: caffeineTotal(recommendations) }
       : undefined;
     return sendSuccess(res, 200, { data: recommendations, ...(meta ? { meta } : {}) });
   } catch (error) {
